@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+<form id="upload" action="{{ url_for('interface') }}" method="POST" enctype="multipart/form-data"></form>
+<form id="actions" action="{{ url_for('interface') }}" method="POST"></form>
+<select hidden id="add-pos" name="add-pos" multiple form="actions"></select>
+<select hidden id="remove" name="remove" multiple form="actions"></select>
+<input hidden id="file" type="file" name="file" multiple onchange="this.form.submit()" form="upload">
+<select hidden id="add-neg" name="add-neg" multiple form="actions"></select>
+
+<div class="container">
+	<div class="row">
+
+		<div class="col">
+			<div class="grid pos" style="visibility:hidden;">
+				{% for idx in session.pos_idxs %}
+				<div style="max-width: {{ session.size }}px" class="grid-item pos" meta-href={{ metas[idx][0]|safe }}>
+					<img style="width:100%" class="grid-item-img pos" src="{{ thumbs[idx]|safe }}" value="{{ idx }}" />
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+
+		<div class="col">
+			<div class="grid neg" style="visibility:hidden">
+				{% for idx in session.neg_idxs %}
+				<div style="max-width: {{ session.size }}px" class="grid-item neg" meta-href={{ metas[idx][0]|safe }}>
+					<img style="width:100%" class="grid-item-img neg" src="{{ thumbs[idx]|safe }}" value="{{ idx }}" />
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+
+	</div>
+
+	<div class="row">
+		<div class="col">
+			<hr>
+			<div class="form-inline">
+				<input type="button" class="btn btn-light" name="btn" value="Upload" form="actions"
+					onclick="$('#file').trigger('click');">&nbsp;&nbsp;
+				<input type="submit" class="btn btn-light" name="btn" value="Positive" form="actions"
+					onclick="return_active('add-pos')">&nbsp;&nbsp;
+				<input type="submit" class="btn btn-light" name="btn" value="Negative" form="actions"
+					onclick="return_active('add-neg')">&nbsp;&nbsp;
+				<input type="submit" class="btn btn-light" name="btn" value="Remove" form="actions"
+					onclick="return_active('remove')">&nbsp;&nbsp;
+				<select class="custom-select" name="emb_type" onchange="this.form.submit()" form="actions">
+					{% for emb_type in session.emb_types %}
+					<option {{ "selected" if session.emb_type==emb_type }} value="{{ emb_type }}">{{ emb_type }}</option>
+					{% endfor %}
+				</select>&nbsp;&nbsp;
+				<select class="custom-select" name="mode" onchange="this.form.submit()" form="actions">
+					{% for mode in Config.MODES %}
+					<option {{ "selected" if session.mode==mode }} value="{{ mode }}">{{ mode }}</option>
+					{% endfor %}
+				</select>&nbsp;&nbsp;
+				<select class="custom-select" name="metric" onchange="this.form.submit()" form="actions">
+					{% for metric in session.metrics %}
+					<option {{ "selected" if session.metric==metric }} value="{{ metric }}">{{ metric }}</option>
+					{% endfor %}
+				</select>&nbsp;&nbsp;&nbsp;&nbsp;
+				<span>Searching in {{ session.model_len }} images</span>
+			</div>
+			<hr>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col">
+			<div class="grid res" style="visibility:hidden">
+				{% for idx in session.res_idxs %}
+				<div style="max-width: {{ session.size }}px" class="grid-item res" meta-href={{ metas[idx][0]|safe }}>
+					<img style="max-width: 100%" class="grid-item-img res" src="{{ thumbs[idx]|safe }}"
+						value="{{ idx }}" />
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+
+</div>
+
+<script>
+
+	var $grid_pos = $(".grid.pos").imagesLoaded(function () {
+		$grid_pos.css("visibility", "visible");
+		$grid_pos.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.pos", gutter: 3});
+  });
+
+	var $grid_neg = $(".grid.neg").imagesLoaded(function () {
+		$grid_neg.css("visibility", "visible");
+		$grid_neg.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.neg", gutter: 3});
+	});
+
+	var $grid_res = $(".grid.res").imagesLoaded(function () {
+		$grid_res.css("visibility", "visible");
+		$grid_res.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.res", gutter: 3});
+  });
+
+	$(".grid-item-img").on("click", function (event) {
+		$(this).toggleClass("active");
+	});
+
+	$(".grid-item").on("dblclick", function (event) {
+		window.location.href = $(this).attr("meta-href");
+	});
+
+	function return_active(select) {
+		$(".active").each(function () {
+			value = $(this).attr("value");
+			$("#" + select).append(new Option(value, value, false, true));
+		});
+	};
+
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+.grid-item-img {
+  border: 3px solid transparent;
+  opacity: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  backface-visibility: hidden;
+}
+
+/*
+.grid-item-img.hover {
+  border: 3px dotted red;
+  transform: scale(1.2);
+  position: relative;
+  z-index: 5;
+}
+*/
+
+.container{
+  margin-top: 50px;
+}
+
+.grid-item-img.active {border: 3px dotted red;}

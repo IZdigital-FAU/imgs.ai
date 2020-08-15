@@ -1,0 +1,12 @@
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+.vagrant/
+.vscode/
+models/
+Vagrantfile
+migrations/
+users.db
+FIX.md
+*.log
+uploads/
