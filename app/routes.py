@@ -140,15 +140,12 @@ def interface():
     start = time.process_time()
     session.get_nns()
     log.info(
-        f"Search completed in {time.process_time() - start}, returning {len(session.res_idxs)} results"
+        f"Search by {current_user} in {session.model} completed in {time.process_time() - start}, returning {len(session.res_idxs)} results"
     )
 
     # Render
     start = time.process_time()
     metas, thumbs = session.render_nns()
-    log.info(
-        f"Data gathered in {time.process_time() - start}, returning {len(session.res_idxs)} results"
-    )
 
     session.store(flask_session)
 
