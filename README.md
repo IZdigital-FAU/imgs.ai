@@ -23,7 +23,7 @@
 - `flask db migrate`
 - `flask db upgrade`
 
-# Run
+## Run
 
 - Run with: `LRU_CACHE_CAPACITY=1 gunicorn -b 0.0.0.0:5000 app:app`
 
