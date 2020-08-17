@@ -1,9 +1,10 @@
 from flask import render_template, flash, redirect, request, url_for
+from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
 from app.forms import SignupForm, LoginForm
 from app import app, log, db, login_manager
 from app.user import User, create_user
-from app.session import Session, session
+from app.session import Session
 from config import Config
 import time
 
@@ -72,13 +73,14 @@ def users():
 @login_required
 def logout():
     logout_user()
+    flask_session.clear()
     return redirect(url_for("index"))
 
 
 @app.route("/settings")
 @login_required
 def settings():
-    global session
+    session = Session(flask_session)
     return render_template(
         "settings.html", title="imgs.ai", session=session, Config=Config
     )
@@ -87,7 +89,7 @@ def settings():
 @app.route("/interface", methods=["GET", "POST"])
 @login_required
 def interface():
-    global session
+    session = Session(flask_session)
 
     # Uploads
     if request.files:
@@ -95,8 +97,8 @@ def interface():
 
     # Model
     if "model" in request.form:
-        if session.model != request.form["model"]:
-            session = Session(request.form["model"])
+        if session.model != request.form["model"]: # Only reload and reset if model changed
+            session.load_model(request.form["model"])
 
     # Settings
     if "n" in request.form:
@@ -147,6 +149,8 @@ def interface():
     log.info(
         f"Data gathered in {time.process_time() - start}, returning {len(session.res_idxs)} results"
     )
+
+    session.store(flask_session)
 
     return render_template(
         "interface.html",

@@ -18,3 +18,5 @@ class Config(object):
     DEFAULT_MODE = "ranking"
     UPLOAD_CACHE = "uploads"
     UPLOAD_FILE = "uploads.hdf5"
+    # SESSION_COOKIE_SECURE = True # Activate in production
+    # REMEMBER_COOKIE_SECURE = True # Activate in production
