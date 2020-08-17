@@ -98,7 +98,7 @@ def interface():
     # Model
     if "model" in request.form:
         if session.model != request.form["model"]: # Only reload and reset if model changed
-            session.load_model(request.form["model"])
+            session.load_model(request.form["model"], pin_idxs=session.pos_idxs) # Keep all positive queries
 
     # Settings
     if "n" in request.form:

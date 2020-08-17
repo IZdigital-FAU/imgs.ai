@@ -48,9 +48,15 @@ def upload_imgs_to(files, folder):
     new_dir(folder)
     idxs = []
     paths = []
-    for fname in files:
-        stream = BytesIO(fname.read())
-        img = PIL.Image.open(stream).convert("RGB")
+    for file in files:
+        if isinstance(file, str): # URL or file path
+            if file.startswith("http"):
+                img = image_from_url(file)
+            else:
+                img = PIL.Image.open(file).convert("RGB")
+        else: # Data stream
+            stream = BytesIO(file.read())
+            img = PIL.Image.open(stream).convert("RGB")
         idx = f"upload_{str(uuid4())}"
         path = str(os.path.join(folder, f"{idx}.jpg"))
         img.save(path)

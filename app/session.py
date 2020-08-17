@@ -6,7 +6,8 @@ from io import BytesIO
 import time
 import numpy as np
 import PIL.Image
-from app import models
+from app import models, log
+from config import Config
 
 
 # Per-user state, deals with server-side models and serialization as client session
@@ -43,7 +44,15 @@ class Session:
         self.neg_idxs = flask_session["neg_idxs"]
         self.load_model_params() # No need to save those
 
-    def load_model(self, model):
+    def load_model(self, model, pin_idxs=None):
+
+        files = []
+        if pin_idxs:
+            for idx, meta in models[self.model].get_metadata(pin_idxs).items():
+                file = meta[0] # Image path
+                files.append(file)
+                log.info(f"Keeping pinned file {file}")
+
         self.model = model
         self.emb_type = models[self.model].config["emb_types"][0]
         self.metric = models[self.model].config["metrics"][0]
@@ -52,6 +61,9 @@ class Session:
         self.neg_idxs = []
         self.load_model_params()
 
+        if files:
+            self.extend(files)
+        
     def load_model_params(self):
         self.model_len = models[self.model].config["model_len"]
         self.emb_types = models[self.model].config["emb_types"]
