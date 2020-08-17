@@ -1,6 +1,6 @@
-# imgs.ai
+# Installation
 
-## Installation on remote sever
+## Set up server and install requirements
 
 - Follow https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04
 - Download and install Miniconda
@@ -16,21 +16,23 @@
 - `sudo ufw allow 80`
 - `sudo ufw allow 443`
 - `caddy reverse-proxy --from fau.critical.vision --to localhost:5000` (or set up Caddyfile and run with systemd service)
-- Run with: `LRU_CACHE_CAPACITY=1 gunicorn -b 0.0.0.0:5000 app:app`
-- Access via: https://server/user/model/neighbors
 
-### Optional build with jemalloc
+## Initialize database
+
+- `flask db init`
+- `flask db migrate`
+- `flask db upgrade`
+
+# Run
+
+- Run with: `LRU_CACHE_CAPACITY=1 gunicorn -b 0.0.0.0:5000 app:app`
+
+## Optional build with jemalloc
 
 - `sudo apt install build-essential`
 - Dowload jemalloc from https://github.com/jemalloc/jemalloc/releases
 - Install like https://github.com/jemalloc/jemalloc/blob/dev/INSTALL.md (see also https://zapier.com/engineering/celery-python-jemalloc/)
 - Run with: `LD_PRELOAD=/usr/local/lib/libjemalloc.so LRU_CACHE_CAPACITY=1 gunicorn -b 0.0.0.0:5000 app:app`
-
-### Initialize database
-
-- `flask db init`
-- `flask db migrate`
-- `flask db upgrade`
 
 ## Resources
 - https://www.oreilly.com/library/view/practical-deep-learning/9781492034858/ch04.html
