@@ -17,3 +17,4 @@ class Config(object):
     MODES = ["ranking", "centroid"]
     DEFAULT_MODE = "ranking"
     UPLOAD_CACHE = "uploads"
+    UPLOAD_FILE = "uploads.hdf5"

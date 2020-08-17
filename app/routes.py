@@ -60,7 +60,6 @@ def login():
 @app.route("/users", methods=["GET", "POST"])
 @login_required
 def users():
-    log.info("User administration access")
     if request.method == "POST":
         for i, access in request.form.items():
             user = User.query.get(int(i))
@@ -92,7 +91,7 @@ def interface():
 
     # Uploads
     if request.files:
-        session.extend_model(request.files.getlist("file"))
+        session.extend(request.files.getlist("file"))
 
     # Model
     if "model" in request.form:
@@ -114,28 +113,25 @@ def interface():
     # Actions
     if "btn" in request.form:
         if request.form["btn"] == "Positive":
-            new_idxs = [int(i) for i in request.form.getlist("add-pos")]
             session.pos_idxs = list(
-                set(session.pos_idxs) | set(new_idxs)
+                set(session.pos_idxs) | set(request.form.getlist("add-pos"))
             )  # Union of sets
             session.neg_idxs = list(
-                set(session.neg_idxs) - set(new_idxs)
+                set(session.neg_idxs) - set(request.form.getlist("add-pos"))
             )  # Difference of sets
         elif request.form["btn"] == "Remove":
-            old_idxs = [int(i) for i in request.form.getlist("remove")]
             session.pos_idxs = list(
-                set(session.pos_idxs) - set(old_idxs)
+                set(session.pos_idxs) - set(request.form.getlist("remove"))
             )  # Difference of sets
             session.neg_idxs = list(
-                set(session.neg_idxs) - set(old_idxs)
+                set(session.neg_idxs) - set(request.form.getlist("remove"))
             )  # Difference of sets
         elif request.form["btn"] == "Negative":
-            new_idxs = [int(i) for i in request.form.getlist("add-neg")]
             session.neg_idxs = list(
-                set(session.neg_idxs) | set(new_idxs)
+                set(session.neg_idxs) | set(request.form.getlist("add-neg"))
             )  # Union of sets
             session.pos_idxs = list(
-                set(session.pos_idxs) - set(new_idxs)
+                set(session.pos_idxs) - set(request.form.getlist("add-neg"))
             )  # Difference of sets
 
     # Search

@@ -1,7 +1,7 @@
 import numpy as np
 import PIL.Image
 import torch as t
-import uuid
+from uuid import uuid4
 import os
 from math import ceil
 from random import sample
@@ -46,14 +46,17 @@ def image_from_url(url, max_tries=10):
 
 def upload_imgs_to(files, folder):
     new_dir(folder)
-    new_paths = []
+    idxs = []
+    paths = []
     for fname in files:
         stream = BytesIO(fname.read())
         img = PIL.Image.open(stream).convert("RGB")
-        path = str(os.path.join(folder, f"{str(uuid.uuid4())}.jpg"))
+        idx = f"upload_{str(uuid4())}"
+        path = str(os.path.join(folder, f"{idx}.jpg"))
         img.save(path)
-        new_paths.append(path)
-    return new_paths
+        idxs.append(idx)
+        paths.append(path)
+    return paths, idxs
 
 
 def sample_range(n, k):

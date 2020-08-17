@@ -1,4 +1,4 @@
-from util import set_cuda, load_img, sort_dict
+from util import set_cuda, load_img, sort_dict, upload_imgs_to
 import numpy as np
 import PIL.Image
 import os
@@ -6,8 +6,8 @@ import csv
 import pickle
 import json
 from annoy import AnnoyIndex
-from typing import List, Dict, Any
-from nptyping import NDArray
+from config import Config
+import h5py
 
 
 class EmbeddingModel:
@@ -20,7 +20,24 @@ class EmbeddingModel:
     def __len__(self):
         return self.config["model_len"]
 
-    def get_nearest_neighbours(
+    def extend(self, files):
+        # Load uploads file
+        uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
+        uploads = h5py.File(uploads_file, "a") # Read/write/create
+
+        paths, idxs = upload_imgs_to(files, Config.UPLOAD_CACHE)
+        embs = self.transform(paths)
+
+        for i, idx in enumerate(idxs):
+            for emb_type in embs:
+                uploads.create_dataset(f"{idx}/{emb_type}", compression="lzf", data=embs[emb_type][i])
+        
+        # Unload uploads file
+        uploads.close()
+
+        return idxs
+
+    def get_nns(
         self,
         emb_type,
         n,
@@ -28,7 +45,6 @@ class EmbeddingModel:
         neg_idxs,
         metric,
         mode="ranking",
-        uploads=None,
         search_k=-1,
         limit=None,
     ):
@@ -40,21 +56,26 @@ class EmbeddingModel:
         ann = AnnoyIndex(self.config["dims"][emb_type], metric)
         ann.load(hood_file)
 
+        # Load uploads file         
+        uploads_file = os.path.join(self.model_folder, "uploads.hdf5")            
+        uploads = h5py.File(uploads_file, "r")
+
         # Get vectors from indices
-        # TYPE-HINTED, expects list of idxs, returns list of 1D arrays
-        def vectors_from_idxs(idxs: List[int]) -> List[NDArray[Any]]:
+        def vectors_from_idxs(idxs):
             vectors = []
             for idx in idxs:
-                # If idx is larger than model size it belongs to user uploads
-                if idx >= len(self):
-                    vectors.append(
-                        uploads[idx - len(self)].embs[emb_type][0]
-                    )  # Make it 1D
+                # Index for upload has UUID4 format to make it unique across models
+                if idx.startswith("upload"):
+                    vectors.append(uploads[idx][emb_type])
                 else:
-                    vectors.append(ann.get_item_vector(idx))
+                    vectors.append(ann.get_item_vector(int(idx))) # Indices are strings
                 return vectors
 
         nns = []
+
+        # Don't try to display more than we have
+        n = min(n, len(self))
+
         # Get nearest neighbors
         if pos_idxs and neg_idxs:  # Arithmetic
             vectors = np.array(vectors_from_idxs(pos_idxs + neg_idxs))
@@ -108,12 +129,13 @@ class EmbeddingModel:
         # Unload neighborhood file
         ann.unload()
 
-        # Remove queries from results
-        nns = list(set(nns) - set(pos_idxs + neg_idxs))  # Difference of sets
+        nns = [str(nn) for nn in nns] # Indices are strings
+        nns = list(set(nns) - set(pos_idxs + neg_idxs))  # Remove queries
+        nns = nns[:n] # Limit to n
 
-        return nns[:limit] if limit else nns
+        return nns
 
-    def get_metadata(self, idxs, uploads=None, fields=None):
+    def get_metadata(self, idxs):
         # Load metadata file
         meta_file = os.path.join(self.model_folder, self.config["meta_file"])
         f = open(meta_file, "r")
@@ -122,21 +144,18 @@ class EmbeddingModel:
         # Get metadata
         filtered_meta = {}
         for idx in idxs:
-            # If idx is larger than model size it belongs to user uploads
-            if idx >= len(self):
-                path = uploads[idx - len(self)].path
+            # Index for upload has UUID4 format to make it unique across models
+            if idx.startswith("upload"):
+                path = os.path.join(Config.UPLOAD_CACHE, f"{idx}.jpg")
                 filtered_meta[idx] = [path, path]
             else:
-                # Get remaining model indices
+                # Get remaining indices
                 for i, row in enumerate(meta):
-                    if i in idxs:
+                    if str(i) in idxs: # Indices are strings
                         # Always return absolute paths, except for URLs
                         if not row[0].startswith("http"):
                             row[0] = os.path.join(self.config["data_root"], row[0])
-                        if fields:
-                            filtered_meta[i] = [row[field] for field in fields]
-                        else:
-                            filtered_meta[i] = row
+                        filtered_meta[str(i)] = row # Indices are strings
 
         # Unload metadata file
         f.close()
