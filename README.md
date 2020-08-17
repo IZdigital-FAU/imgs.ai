@@ -9,7 +9,7 @@
 - `conda activate imgs.ai`
 - `conda install pytorch torchvision cpuonly -c pytorch` (with GPU: `conda install pytorch torchvision cudatoolkit=10.1 -c pytorch`)
 - `conda install -c conda-forge flask flask-cors flask-wtf flask-login flask-migrate flask-sqlalchemy email-validator nptyping`
-- `conda install requests tqdm scikit-learn h5py gunicorn`
+- `conda install requests tqdm scikit-learn h5py gunicorn` (some models trained with scikit-learn 0.22.1, some with 0.23.1)
 - `sudo apt install cmake` (required by face_recognition)
 - `pip install pybase64 annoy face_recognition bootstrap-flask` (don't use flask-bootstrap, https://bootstrap-flask.readthedocs.io/en/latest/migrate.html)
 - Install Caddy: https://caddyserver.com/docs/download

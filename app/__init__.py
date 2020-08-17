@@ -22,6 +22,7 @@ login_manager = LoginManager(app)  # Login
 login_manager.login_view = "login"
 
 # Logging
+logging.captureWarnings(True)
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler("imgs.ai.log")
