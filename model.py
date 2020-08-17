@@ -23,15 +23,17 @@ class EmbeddingModel:
     def extend(self, files):
         # Load uploads file
         uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
-        uploads = h5py.File(uploads_file, "a") # Read/write/create
+        uploads = h5py.File(uploads_file, "a")  # Read/write/create
 
         paths, idxs = upload_imgs_to(files, Config.UPLOAD_CACHE)
         embs = self.transform(paths)
 
         for i, idx in enumerate(idxs):
             for emb_type in embs:
-                uploads.create_dataset(f"{idx}/{emb_type}", compression="lzf", data=embs[emb_type][i])
-        
+                uploads.create_dataset(
+                    f"{idx}/{emb_type}", compression="lzf", data=embs[emb_type][i]
+                )
+
         # Unload uploads file
         uploads.close()
 
@@ -56,8 +58,8 @@ class EmbeddingModel:
         ann = AnnoyIndex(self.config["dims"][emb_type], metric)
         ann.load(hood_file)
 
-        # Load uploads file         
-        uploads_file = os.path.join(self.model_folder, "uploads.hdf5")            
+        # Load uploads file
+        uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
         uploads = h5py.File(uploads_file, "r")
 
         # Get vectors from indices
@@ -68,7 +70,7 @@ class EmbeddingModel:
                 if idx.startswith("upload"):
                     vectors.append(uploads[idx][emb_type])
                 else:
-                    vectors.append(ann.get_item_vector(int(idx))) # Indices are strings
+                    vectors.append(ann.get_item_vector(int(idx)))  # Indices are strings
                 return vectors
 
         nns = []
@@ -129,9 +131,9 @@ class EmbeddingModel:
         # Unload neighborhood file
         ann.unload()
 
-        nns = [str(nn) for nn in nns] # Indices are strings
+        nns = [str(nn) for nn in nns]  # Indices are strings
         nns = list(set(nns) - set(pos_idxs + neg_idxs))  # Remove queries
-        nns = nns[:n] # Limit to n
+        nns = nns[:n]  # Limit to n
 
         return nns
 
@@ -151,11 +153,11 @@ class EmbeddingModel:
             else:
                 # Get remaining indices
                 for i, row in enumerate(meta):
-                    if str(i) in idxs: # Indices are strings
+                    if str(i) in idxs:  # Indices are strings
                         # Always return absolute paths, except for URLs
                         if not row[0].startswith("http"):
                             row[0] = os.path.join(self.config["data_root"], row[0])
-                        filtered_meta[str(i)] = row # Indices are strings
+                        filtered_meta[str(i)] = row  # Indices are strings
 
         # Unload metadata file
         f.close()

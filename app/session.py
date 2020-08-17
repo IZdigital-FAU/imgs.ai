@@ -47,7 +47,7 @@ class Session:
             )
         else:
             idxs = sample_range(self.model_len, int(self.n))
-            self.res_idxs = [str(idx) for idx in idxs] # Indices are strings
+            self.res_idxs = [str(idx) for idx in idxs]  # Indices are strings
 
     def render_nns(self):
         # Get metadata and load thumbnails, reset so we do not accumulate data
@@ -62,5 +62,6 @@ class Session:
     # Serialize to redis o.Ä.
     # def store():
     # def load():
+
 
 session = Session()

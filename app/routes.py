@@ -149,5 +149,10 @@ def interface():
     )
 
     return render_template(
-        "interface.html", title="imgs.ai", session=session, Config=Config, metas=metas, thumbs=thumbs
+        "interface.html",
+        title="imgs.ai",
+        session=session,
+        Config=Config,
+        metas=metas,
+        thumbs=thumbs,
     )
