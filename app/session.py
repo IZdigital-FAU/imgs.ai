@@ -1,13 +1,14 @@
 import os
 import numpy as np
 from config import Config
-from util import sample_range, fast_base64thumb
+from util import sample_range, fast_base64thumb, fast_base64img
 from io import BytesIO
 import time
 import numpy as np
 import PIL.Image
 from app import models, log
 from config import Config
+from flask import url_for
 
 
 # Per-user state, deals with server-side models and serialization as client session
@@ -92,8 +93,20 @@ class Session:
         # Get metadata and load thumbnails, reset so we do not accumulate data
         metas = {}
         thumbs = {}
+        links = {}
         idxs = self.pos_idxs + self.neg_idxs + self.res_idxs
         for idx, meta in models[self.model].get_metadata(idxs).items():
-            metas[idx] = meta[1:]
-            thumbs[idx] = fast_base64thumb(meta[0], size=int(self.size), axis=0)
-        return metas, thumbs
+            metas[idx] = meta
+            if len(meta) > 1:
+                link = meta[1] # Source link
+            else:
+                link = url_for('image', idx=idx)
+            links[idx] = link
+            thumbs[idx] = fast_base64thumb(meta[0], size=int(self.size), axis=0) # File link
+        return metas, thumbs, links
+
+    def get_img(self, idx):
+        # Get metadata and load thumbnail for specific index
+        meta = models[self.model].get_metadata([idx])
+        img = fast_base64img(meta[idx][0]) # File link
+        return img

@@ -31,6 +31,23 @@ def fast_base64thumb(path, size=128, axis=None):
     return img_str
 
 
+def fast_base64img(path):
+    try:
+        if path.startswith("http"):
+            img = image_from_url(path)
+        else:
+            img = load_img(path)
+    except:
+        return ""
+    out = BytesIO()
+    img.save(out, "jpeg")
+    img_str = "data:image/jpeg;base64, " + pybase64.b64encode(out.getvalue()).decode(
+        "utf-8"
+    )
+    return img_str
+
+
+
 def image_from_url(url, max_tries=10):
     tries = 0
     while tries < max_tries:

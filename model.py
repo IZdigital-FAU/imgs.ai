@@ -149,15 +149,18 @@ class EmbeddingModel:
             # Index for upload has UUID4 format to make it unique across models
             if idx.startswith("upload"):
                 path = os.path.join(Config.UPLOAD_CACHE, f"{idx}.jpg")
-                filtered_meta[idx] = [path, path]
+                filtered_meta[idx] = [path]
             else:
                 # Get remaining indices
                 for i, row in enumerate(meta):
                     if str(i) in idxs:  # Indices are strings
+                        filtered_meta[str(i)] = []
                         # Always return absolute paths, except for URLs
                         if not row[0].startswith("http"):
                             row[0] = os.path.join(self.config["data_root"], row[0])
-                        filtered_meta[str(i)] = row  # Indices are strings
+                        for col in row:
+                            if col:
+                                filtered_meta[str(i)].append(col)  # Indices are strings
 
         # Unload metadata file
         f.close()

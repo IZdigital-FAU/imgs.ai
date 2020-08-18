@@ -86,9 +86,20 @@ def settings():
     )
 
 
+@app.route("/image/<idx>")
+@login_required
+def image(idx):
+    session = Session(flask_session)
+    img = session.get_img(idx)
+    return render_template(
+        "image.html", title="imgs.ai", img=img
+    )
+
+
 @app.route("/interface", methods=["GET", "POST"])
 @login_required
 def interface():
+    # Load from cookie
     session = Session(flask_session)
 
     # Uploads
@@ -143,10 +154,10 @@ def interface():
         f"Search by {current_user} in {session.model} completed in {time.process_time() - start}, returning {len(session.res_idxs)} results"
     )
 
-    # Render
-    start = time.process_time()
-    metas, thumbs = session.render_nns()
+    # Render data
+    metas, thumbs, links = session.render_nns()
 
+    # Store in cookie
     session.store(flask_session)
 
     return render_template(
@@ -156,4 +167,5 @@ def interface():
         Config=Config,
         metas=metas,
         thumbs=thumbs,
+        links=links
     )
