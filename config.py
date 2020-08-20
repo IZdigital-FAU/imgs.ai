@@ -8,7 +8,7 @@ username = pwd.getpwuid(os.getuid()).pw_name
 class Config(object):
     SECRET_KEY = os.environ.get("SECRET_KEY") or "you-will-never-guess"
     SQLALCHEMY_DATABASE_URI = (
-        f"sqlite:////home/{username}/imgs.ai-dev/users.db"  # Absolute
+        f"sqlite:////home/{username}/models/users.db"  # Absolute
     )
     # https://stackoverflow.com/questions/33738467/how-do-i-know-if-i-can-disable-sqlalchemy-track-modifications
     SQLALCHEMY_TRACK_MODIFICATIONS = False
