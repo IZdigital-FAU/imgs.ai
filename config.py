@@ -1,14 +1,18 @@
 import os
+import pwd
+
+
+username = pwd.getpwuid(os.getuid()).pw_name
 
 
 class Config(object):
     SECRET_KEY = os.environ.get("SECRET_KEY") or "you-will-never-guess"
     SQLALCHEMY_DATABASE_URI = (
-        "sqlite:////home/fabian/Desktop/dev/ML/imgs.ai/users.db"  # Absolute
+        f"sqlite:////home/{username}/imgs.ai-dev/users.db"  # Absolute
     )
     # https://stackoverflow.com/questions/33738467/how-do-i-know-if-i-can-disable-sqlalchemy-track-modifications
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MODELS_PATH = "/home/fabian/Desktop/dev/ML/imgs.ai/models"  # Absolute
+    MODELS_PATH = f"/home/{username}/models/models"  # Absolute
     MODELS = [f.name for f in os.scandir(MODELS_PATH) if f.is_dir()]
     NS = ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100"]
     DEFAULT_N = "30"
@@ -18,5 +22,5 @@ class Config(object):
     DEFAULT_MODE = "ranking"
     UPLOAD_CACHE = "uploads"
     UPLOAD_FILE = "uploads.hdf5"
-    # SESSION_COOKIE_SECURE = True # Activate in production
-    # REMEMBER_COOKIE_SECURE = True # Activate in production
+    SESSION_COOKIE_SECURE = True # Activate in production
+    REMEMBER_COOKIE_SECURE = True # Activate in production
