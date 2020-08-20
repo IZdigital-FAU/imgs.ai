@@ -47,6 +47,9 @@ class Session:
 
     def load_model(self, model, pin_idxs=None):
 
+        self.model = model
+        self.load_model_params()
+
         files = []
         if pin_idxs:
             for idx, meta in models[self.model].get_metadata(pin_idxs).items():
@@ -54,13 +57,11 @@ class Session:
                 files.append(file)
                 log.info(f"Keeping pinned file {file}")
 
-        self.model = model
-        self.emb_type = models[self.model].config["emb_types"][0]
-        self.metric = models[self.model].config["metrics"][0]
+        self.emb_type = self.emb_types[0]
+        self.metric = self.metrics[0]
         self.res_idxs = []
         self.pos_idxs = []
         self.neg_idxs = []
-        self.load_model_params()
 
         if files:
             self.extend(files)
@@ -69,6 +70,11 @@ class Session:
         self.model_len = models[self.model].config["model_len"]
         self.emb_types = models[self.model].config["emb_types"]
         self.metrics = models[self.model].config["metrics"]
+
+        # Hack to always show VGG19 embeddings first, independent of model config file
+        if "vgg19" in self.emb_types:
+            idx = self.emb_types.index("vgg19")
+            self.emb_types.insert(0, self.emb_types.pop(idx))
 
     def extend(self, files):
         self.pos_idxs += models[self.model].extend(files)
