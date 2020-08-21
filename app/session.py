@@ -47,9 +47,6 @@ class Session:
 
     def load_model(self, model, pin_idxs=None):
 
-        self.model = model
-        self.load_model_params()
-
         files = []
         if pin_idxs:
             for idx, meta in models[self.model].get_metadata(pin_idxs).items():
@@ -57,6 +54,8 @@ class Session:
                 files.append(file)
                 log.info(f"Keeping pinned file {file}")
 
+        self.model = model
+        self.load_model_params()
         self.emb_type = self.emb_types[0]
         self.metric = self.metrics[0]
         self.res_idxs = []
@@ -75,6 +74,11 @@ class Session:
         if "vgg19" in self.emb_types:
             idx = self.emb_types.index("vgg19")
             self.emb_types.insert(0, self.emb_types.pop(idx))
+
+        # Hack to always show manhattan distance first, independent of model config file
+        if "manhattan" in self.metrics:
+            idx = self.metrics("manhattan")
+            self.metrics.insert(0, self.metrics.pop(idx))
 
     def extend(self, files):
         self.pos_idxs += models[self.model].extend(files)
