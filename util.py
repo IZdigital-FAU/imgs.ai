@@ -22,7 +22,6 @@ def fast_base64thumb(path, size=128, axis=None):
         img = load_img(path)
     except:
         return ""
-    img = smart_resize(img, size, axis=axis)
     out = BytesIO()
     img.save(out, "jpeg")
     img_str = "data:image/jpeg;base64, " + pybase64.b64encode(out.getvalue()).decode(
@@ -106,14 +105,3 @@ def new_dir(folder):
 def set_cuda():
     device = "cuda" if t.cuda.is_available() else "cpu"
     return device
-
-
-def smart_resize(img, size=128, axis=None):
-    if axis:
-        max_dim = axis
-    else:
-        max_dim = np.argmax(img.size)
-    scale = size / img.size[max_dim]
-    new_size = (ceil(img.size[0] * scale), ceil(img.size[1] * scale))
-    img = img.resize(new_size)
-    return img
