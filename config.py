@@ -12,6 +12,7 @@ class Config(object):
     )
     # https://stackoverflow.com/questions/33738467/how-do-i-know-if-i-can-disable-sqlalchemy-track-modifications
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    UPLOADS_PATH = "uploads" # Relative
     MODELS_PATH = f"/home/{username}/models/models"  # Absolute
     MODELS = [f.name for f in os.scandir(MODELS_PATH) if f.is_dir()]
     NS = ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100"]
@@ -20,7 +21,5 @@ class Config(object):
     DEFAULT_SIZE = "128"
     MODES = ["ranking", "centroid"]
     DEFAULT_MODE = "ranking"
-    UPLOAD_CACHE = "uploads"
-    UPLOAD_FILE = "uploads.hdf5"
     SESSION_COOKIE_SECURE = True # Activate in production
     REMEMBER_COOKIE_SECURE = True # Activate in production

@@ -25,7 +25,7 @@ class EmbeddingModel:
         uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
         uploads = h5py.File(uploads_file, "a")  # Read/write/create
 
-        paths, idxs = upload_imgs_to(files, Config.UPLOAD_CACHE)
+        paths, idxs = upload_imgs_to(files, Config.UPLOADS_PATH)
         embs = self.transform(paths)
 
         for i, idx in enumerate(idxs):
@@ -144,28 +144,20 @@ class EmbeddingModel:
         meta = csv.reader(f)
 
         # Get metadata
-        filtered_meta = {}
+        data = {}
         for idx in idxs:
-            # Index for upload has UUID4 format to make it unique across models
-            if idx.startswith("upload"):
-                path = os.path.join(Config.UPLOAD_CACHE, f"{idx}.jpg")
-                filtered_meta[idx] = [path]
-            else:
-                # Get remaining indices
-                for i, row in enumerate(meta):
-                    if str(i) in idxs:  # Indices are strings
-                        filtered_meta[str(i)] = []
-                        # Always return absolute paths, except for URLs
-                        if not row[0].startswith("http"):
-                            row[0] = os.path.join(self.config["data_root"], row[0])
-                        for col in row:
-                            if col:
-                                filtered_meta[str(i)].append(col)  # Indices are strings
+            # Get remaining indices
+            for i, row in enumerate(meta):
+                if str(i) in idxs:  # Indices are strings
+                    data[str(i)] = []
+                    for col in row:
+                        if col:
+                            data[str(i)].append(col)  # Indices are strings
 
         # Unload metadata file
         f.close()
 
-        return filtered_meta
+        return data
 
     def transform(self, paths):
         device = set_cuda()

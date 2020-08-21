@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, request, url_for
+from flask import render_template, flash, redirect, request, url_for, send_from_directory
 from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
 from app.forms import SignupForm, LoginForm
@@ -7,6 +7,7 @@ from app.user import User, create_user
 from app.session import Session
 from config import Config
 import time
+import os
 
 
 @login_manager.user_loader
@@ -86,14 +87,12 @@ def settings():
     )
 
 
-@app.route("/image/<idx>")
+@app.route("/cdn/<idx>")
 @login_required
-def image(idx):
+def cdn(idx):
     session = Session(flask_session)
-    img = session.get_img(idx)
-    return render_template(
-        "image.html", title="imgs.ai", img=img
-    )
+    root, file = session.idx_to_path(idx)
+    return send_from_directory(root, file)
 
 
 @app.route("/interface", methods=["GET", "POST"])
@@ -101,8 +100,6 @@ def image(idx):
 def interface():
     # Load from cookie
     session = Session(flask_session)
-
-    print(url_for("static", filename="harvard/00000.jpg"))
 
     # Uploads
     if request.files:

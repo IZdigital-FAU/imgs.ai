@@ -13,7 +13,7 @@ import pybase64
 from functools import lru_cache
 
 
-@lru_cache(maxsize=100)  # Cache up to 100 images, noticable difference!
+@lru_cache(maxsize=100)  # Cache up to 100 images
 def fast_base64img(path, load_urls=False):
     if path.startswith("http"):
         if load_urls:
