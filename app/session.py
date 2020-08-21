@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from config import Config
-from util import sample_range, fast_base64thumb, fast_base64img
+from util import sample_range, fast_base64img
 from io import BytesIO
 import time
 import numpy as np
@@ -112,7 +112,7 @@ class Session:
             else:
                 link = url_for('image', idx=idx)
             links[idx] = link
-            thumbs[idx] = fast_base64thumb(meta[0], size=int(self.size), axis=0) # File link
+            thumbs[idx] = fast_base64img(meta[0]) # File link
         return metas, thumbs, links
 
     def get_img(self, idx):

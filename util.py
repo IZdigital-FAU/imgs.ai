@@ -14,10 +14,12 @@ from functools import lru_cache
 
 
 @lru_cache(maxsize=100)  # Cache up to 100 images, noticable difference!
-def fast_base64thumb(path, size=128, axis=None):
-    # Return URLs as-is
+def fast_base64img(path, load_urls=False):
     if path.startswith("http"):
-        return path
+        if load_urls:
+            img = image_from_url(path)
+        else:
+            return path
     try:
         img = load_img(path)
     except:
@@ -28,23 +30,6 @@ def fast_base64thumb(path, size=128, axis=None):
         "utf-8"
     )
     return img_str
-
-
-def fast_base64img(path):
-    try:
-        if path.startswith("http"):
-            img = image_from_url(path)
-        else:
-            img = load_img(path)
-    except:
-        return ""
-    out = BytesIO()
-    img.save(out, "jpeg")
-    img_str = "data:image/jpeg;base64, " + pybase64.b64encode(out.getvalue()).decode(
-        "utf-8"
-    )
-    return img_str
-
 
 
 def image_from_url(url, max_tries=10):
