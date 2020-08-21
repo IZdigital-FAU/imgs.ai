@@ -15,8 +15,8 @@
 		<div class="col">
 			<div class="grid pos" style="visibility:hidden;">
 				{% for idx in session.pos_idxs %}
-				<div style="max-width: {{ session.size }}px" class="grid-item pos" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ metas[idx]|safe }}" meta-href="{{ links[idx]|safe }}">
-					<img style="width:100%" class="grid-item-img pos" src="{{ thumbs[idx]|safe }}" value="{{ idx }}" />
+				<div style="max-width: {{ session.size }}px" class="grid-item pos" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href="{{ links[idx]|safe }}">
+					<img style="width:100%" class="grid-item-img pos" src="{{ images[idx]|safe }}" value="{{ idx }}" />
 				</div>
 				{% endfor %}
 			</div>
@@ -26,8 +26,8 @@
 		<div class="col">
 			<div class="grid neg" style="visibility:hidden">
 				{% for idx in session.neg_idxs %}
-				<div style="max-width: {{ session.size }}px" class="grid-item neg" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ metas[idx]|safe }}" meta-href={{ links[idx]|safe }}>
-					<img style="width:100%" class="grid-item-img neg" src="{{ thumbs[idx]|safe }}" value="{{ idx }}" />
+				<div style="max-width: {{ session.size }}px" class="grid-item neg" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
+					<img style="width:100%" class="grid-item-img neg" src="{{ images[idx]|safe }}" value="{{ idx }}" />
 				</div>
 				{% endfor %}
 			</div>
@@ -73,8 +73,8 @@
 		<div class="col">
 			<div class="grid res" style="visibility:hidden">
 				{% for idx in session.res_idxs %}
-				<div style="max-width: {{ session.size }}px" class="grid-item res" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ metas[idx]|safe }}" meta-href={{ links[idx]|safe }}>
-					<img style="max-width: 100%" class="grid-item-img res" src="{{ thumbs[idx]|safe }}"
+				<div style="max-width: {{ session.size }}px" class="grid-item res" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
+					<img style="max-width: 100%" class="grid-item-img res" src="{{ images[idx]|safe }}"
 						value="{{ idx }}" />
 				</div>
 				{% endfor %}
@@ -116,11 +116,11 @@
 		});
 	};
 
-	/*
+	
 	$(function () {
   		$('[data-toggle="popover"]').popover()
 	})
-	*/
+	
 
 </script>
 {% endblock %}

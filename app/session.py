@@ -49,10 +49,10 @@ class Session:
 
         files = []
         if pin_idxs:
-            for idx, meta in models[self.model].get_metadata(pin_idxs).items():
-                file = meta[0] # Image path
-                files.append(file)
-                log.info(f"Keeping pinned file {file}")
+            for idx in pin_idxs:
+                root, path, _, _ = self.get_data(idx)
+                files.append(os.path.join(root, path))
+            log.info(f"Keeping pinned files: {files}")
 
         self.model = model
         self.load_model_params()
@@ -100,23 +100,30 @@ class Session:
             self.res_idxs = [str(idx) for idx in idxs]  # Indices are strings
 
     def render_nns(self):
-        # Get metadata and load thumbnails, reset so we do not accumulate data
-        metas = {}
-        thumbs = {}
+        # Get metadata and load thumbnails
+        popovers = {}
         links = {}
+        images = {}
         idxs = self.pos_idxs + self.neg_idxs + self.res_idxs
-        for idx, meta in models[self.model].get_metadata(idxs).items():
-            metas[idx] = meta # All
-            links[idx] = meta[1] if len(meta) > 1 else url_for('cdn', idx=idx) # Source or CDN
-            thumbs[idx] = meta[0] if meta[0].startswith("http") else url_for('cdn', idx=idx) # URL or CDN
-        return metas, thumbs, links
+        for idx in idxs:
+            root, path, source, metadata = self.get_data(idx)
+            popovers[idx] = "\n".join(metadata) # All but path and source
+            links[idx] = source if source else url_for('cdn', idx=idx) # Source or CDN
+            images[idx] = path if path.startswith("http") else url_for('cdn', idx=idx) # URL or CDN
+        return popovers, links, images
 
-    def idx_to_path(self, idx):
+    def get_data(self, idx):
         if idx.startswith("upload"):
             root = Config.UPLOADS_PATH
             path = f"{idx}.jpg"
-            return root, path
+            source = ""
+            metadata = []
         else:
-            root = models[self.model].config["data_root"]
-            path = models[self.model].get_metadata([idx])[idx][0]
-            return root, path
+            path = models[self.model].paths[idx]
+            if path.startswith("http"):
+                root = ""
+            else:
+                root = models[self.model].config["data_root"]
+            source = models[self.model].sources[idx]
+            metadata = models[self.model].metadata[idx]
+        return root, path, source, metadata

@@ -91,8 +91,8 @@ def settings():
 @login_required
 def cdn(idx):
     session = Session(flask_session)
-    root, file = session.idx_to_path(idx)
-    return send_from_directory(root, file)
+    root, path, _, _ = session.get_data(idx)
+    return send_from_directory(root, path)
 
 
 @app.route("/interface", methods=["GET", "POST"])
@@ -154,7 +154,7 @@ def interface():
     )
 
     # Render data
-    metas, thumbs, links = session.render_nns()
+    popovers, links, images = session.render_nns()
 
     # Store in cookie
     session.store(flask_session)
@@ -164,7 +164,7 @@ def interface():
         title="imgs.ai",
         session=session,
         Config=Config,
-        metas=metas,
-        thumbs=thumbs,
-        links=links
+        popovers=popovers,
+        links=links,
+        images=images
     )

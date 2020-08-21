@@ -2,20 +2,34 @@ from util import set_cuda, load_img, sort_dict, upload_imgs_to
 import numpy as np
 import PIL.Image
 import os
-import csv
 import pickle
 import json
 from annoy import AnnoyIndex
 from config import Config
 import h5py
+import csv
 
 
 class EmbeddingModel:
     def load(self, model_folder):
-        # Load configuration if it exists
+        
+        # Load configuration
         with open(os.path.join(model_folder, "config.json"), "r") as f:
             self.config = json.load(f)
         self.model_folder = model_folder
+
+        # Load metadata
+        self.metadata = {}
+        self.paths = {}
+        self.sources = {}
+        with open(os.path.join(self.model_folder, self.config["meta_file"])) as f:
+            for idx, row in enumerate(csv.reader(f)):
+                self.metadata[str(idx)] = []
+                self.paths[str(idx)] = row[0]
+                self.sources[str(idx)] = row[1]
+                for col in row[1:]:
+                    if col:
+                        self.metadata[str(idx)].append(col)
 
     def __len__(self):
         return self.config["model_len"]
@@ -136,28 +150,6 @@ class EmbeddingModel:
         nns = nns[:n]  # Limit to n
 
         return nns
-
-    def get_metadata(self, idxs):
-        # Load metadata file
-        meta_file = os.path.join(self.model_folder, self.config["meta_file"])
-        f = open(meta_file, "r")
-        meta = csv.reader(f)
-
-        # Get metadata
-        data = {}
-        for idx in idxs:
-            # Get remaining indices
-            for i, row in enumerate(meta):
-                if str(i) in idxs:  # Indices are strings
-                    data[str(i)] = []
-                    for col in row:
-                        if col:
-                            data[str(i)].append(col)  # Indices are strings
-
-        # Unload metadata file
-        f.close()
-
-        return data
 
     def transform(self, paths):
         device = set_cuda()
