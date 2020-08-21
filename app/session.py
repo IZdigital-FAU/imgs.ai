@@ -77,7 +77,7 @@ class Session:
 
         # Hack to always show manhattan distance first, independent of model config file
         if "manhattan" in self.metrics:
-            idx = self.metrics("manhattan")
+            idx = self.metrics.index("manhattan")
             self.metrics.insert(0, self.metrics.pop(idx))
 
     def extend(self, files):
