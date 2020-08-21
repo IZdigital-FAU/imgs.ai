@@ -7,7 +7,5 @@ models/
 Vagrantfile
 migrations/
 users.db
-FIX.md
 *.log
 uploads/
-app/static/imgs/

@@ -102,6 +102,8 @@ def interface():
     # Load from cookie
     session = Session(flask_session)
 
+    print(url_for("static", filename="harvard/00000.jpg"))
+
     # Uploads
     if request.files:
         session.extend(request.files.getlist("file"))
