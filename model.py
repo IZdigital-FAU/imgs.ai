@@ -27,7 +27,7 @@ class EmbeddingModel:
                 self.metadata[str(idx)] = []
                 self.paths[str(idx)] = row[0]
                 self.sources[str(idx)] = row[1]
-                for col in row[1:]:
+                for col in row[2:]:
                     if col:
                         self.metadata[str(idx)].append(col)
 
