@@ -33,6 +33,8 @@ class Session:
         flask_session["res_idxs"] = self.res_idxs
         flask_session["pos_idxs"] = self.pos_idxs
         flask_session["neg_idxs"] = self.neg_idxs
+        flask_session["n"] = self.n
+
 
     def restore(self, flask_session):
         self.model = flask_session["model"]
@@ -43,6 +45,7 @@ class Session:
         self.res_idxs = flask_session["res_idxs"]
         self.pos_idxs = flask_session["pos_idxs"]
         self.neg_idxs = flask_session["neg_idxs"]
+        self.n = flask_session["n"]
         self.load_model_params() # No need to save those
 
     def load_model(self, model, pin_idxs=None):
