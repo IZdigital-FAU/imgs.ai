@@ -11,7 +11,6 @@
 
 <div class="container">
 	<div class="row">
-
 		<div class="col">
 			<div class="grid pos" style="visibility:hidden;">
 				{% for idx in session.pos_idxs %}
@@ -21,7 +20,6 @@
 				{% endfor %}
 			</div>
 		</div>
-
 		{% if session.neg_idxs %}
 		<div class="col">
 			<div class="grid neg" style="visibility:hidden">
@@ -33,41 +31,62 @@
 			</div>
 		</div>
 		{% endif %}
-
 	</div>
+
+	<hr>
 
 	<div class="row">
 		<div class="col">
-			<hr>
 			<div class="form-inline">
-				<input type="button" class="btn btn-light" name="btn" value="Upload" form="actions"
-					onclick="$('#file').trigger('click');">&nbsp;&nbsp;
-				<input type="submit" class="btn btn-light" name="btn" value="Positive" form="actions"
-					onclick="return_active('add-pos')">&nbsp;&nbsp;
-				<input type="submit" class="btn btn-light" name="btn" value="Negative" form="actions"
-					onclick="return_active('add-neg')">&nbsp;&nbsp;
-				<input type="submit" class="btn btn-light" name="btn" value="Remove" form="actions"
-					onclick="return_active('remove')">&nbsp;&nbsp;
-				<select class="custom-select" name="emb_type" onchange="this.form.submit()" form="actions">
-					{% for emb_type in session.emb_types %}
-					<option {{ "selected" if session.emb_type==emb_type }} value="{{ emb_type }}">{{ emb_type }}</option>
-					{% endfor %}
-				</select>&nbsp;&nbsp;
-				<select class="custom-select" name="mode" onchange="this.form.submit()" form="actions">
-					{% for mode in Config.MODES %}
-					<option {{ "selected" if session.mode==mode }} value="{{ mode }}">{{ mode }}</option>
-					{% endfor %}
-				</select>&nbsp;&nbsp;
-				<select class="custom-select" name="metric" onchange="this.form.submit()" form="actions">
-					{% for metric in session.metrics %}
-					<option {{ "selected" if session.metric==metric }} value="{{ metric }}">{{ metric }}</option>
-					{% endfor %}
-				</select>&nbsp;&nbsp;&nbsp;&nbsp;
-				<span>Searching <span class="badge badge-primary">{{ session.model_len }}</span>  images in <span class="badge badge-primary">{{session.model }}</span></span>
+				<div class="form-group mr-2">
+					<label class="mt-2 mb-2 mr-2">Searching&nbsp;<span class="badge badge-primary">{{ session.model_len }}</span>&nbsp;images in</label>
+					<select class="custom-select mt-2 mb-2 mr-2" name="model" onchange="this.form.submit()" form="actions">
+						{% for model in Config.MODELS %}
+						<option {{ 'selected' if session.model==model }} value="{{ model }}">{{ model }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div class="form-group mr-2">
+					<input type="button" class="btn btn-light mt-2 mb-2 mr-2" name="btn" value="Upload" form="actions"
+						onclick="$('#file').trigger('click');">
+					<input type="submit" class="btn btn-light mt-2 mb-2 mr-2" name="btn" value="Positive" form="actions"
+						onclick="return_active('add-pos')">
+					<input type="submit" class="btn btn-light mt-2 mb-2 mr-2" name="btn" value="Negative" form="actions"
+						onclick="return_active('add-neg')">
+					<input type="submit" class="btn btn-light mt-2 mb-2 mr-2" name="btn" value="Remove" form="actions"
+						onclick="return_active('remove')">
+				</div>
 			</div>
-			<hr>
+			<div class="form-inline">
+				<div class="form-group mr-2">
+					<label class="mt-2 mb-2 mr-2">Embedding</label>
+					<select class="custom-select mt-2 mb-2 mr-2" name="emb_type" onchange="this.form.submit()" form="actions">
+						{% for emb_type in session.emb_types %}
+						<option {{ "selected" if session.emb_type==emb_type }} value="{{ emb_type }}">{{ emb_type }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div class="form-group mr-2">
+					<label class="mt-2 mb-2 mr-2">Metric</label>
+					<select class="custom-select mt-2 mb-2 mr-2" name="mode" onchange="this.form.submit()" form="actions">
+						{% for mode in Config.MODES %}
+						<option {{ "selected" if session.mode==mode }} value="{{ mode }}">{{ mode }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div class="form-group mr-2">
+					<label class="mt-2 mb-2 mr-2">Distance</label>
+					<select class="custom-select mt-2 mb-2 mr-2" name="metric" onchange="this.form.submit()" form="actions">
+						{% for metric in session.metrics %}
+						<option {{ "selected" if session.metric==metric }} value="{{ metric }}">{{ metric }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
 		</div>
 	</div>
+
+	<hr>
 
 	<div class="row">
 		<div class="col">

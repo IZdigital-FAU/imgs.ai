@@ -6,15 +6,6 @@
 	<form id="settings" action="{{ url_for('interface') }}" method="POST"></form>
 
 	<div class="form-group">
-		<label>Model</label>
-		<select class="custom-select" name="model" form="settings">
-			{% for model in Config.MODELS %}
-			<option {{ 'selected' if session.model==model }} value="{{ model }}">{{ model }}</option>
-			{% endfor %}
-		</select>
-	</div>
-
-	<div class="form-group">
 		<label>Neighbors</label>
 		<select class="custom-select" name="n" form="settings">
 			{% for n in Config.NS %}
