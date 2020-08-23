@@ -105,11 +105,6 @@ def interface():
     if request.files:
         session.extend(request.files.getlist("file"))
 
-    # Model
-    if "model" in request.form:
-        if session.model != request.form["model"]: # Only reload and reset if model changed
-            session.load_model(request.form["model"], pin_idxs=session.pos_idxs) # Keep all positive queries
-
     # Settings
     if "n" in request.form:
         session.n = request.form["n"]
@@ -145,6 +140,11 @@ def interface():
             session.pos_idxs = list(
                 set(session.pos_idxs) - set(request.form.getlist("add-neg"))
             )  # Difference of sets
+
+    # Model
+    if "model" in request.form:
+        if session.model != request.form["model"]: # Only reload and reset if model changed
+            session.load_model(request.form["model"], pin_idxs=session.pos_idxs) # Keep all positive queries
 
     # Search
     start = time.process_time()
