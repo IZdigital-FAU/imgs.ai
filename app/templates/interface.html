@@ -6,7 +6,7 @@
 <form id="actions" action="{{ url_for('interface') }}" method="POST"></form>
 <select hidden id="add-pos" name="add-pos" multiple form="actions"></select>
 <select hidden id="remove" name="remove" multiple form="actions"></select>
-<input hidden id="file" type="file" name="file" multiple onchange="this.form.submit()" form="upload">
+<input hidden id="file" type="file" name="file" multiple onchange="$('.container').hide(); this.form.submit()" form="upload">
 <select hidden id="add-neg" name="add-neg" multiple form="actions"></select>
 
 <div class="container">
@@ -40,7 +40,7 @@
 			<div class="form-inline">
 				<div class="form-group mr-2">
 					<label class="mt-2 mb-2 mr-2">Searching&nbsp;<span class="badge badge-primary">{{ session.model_len }}</span>&nbsp;images in</label>
-					<select class="custom-select mt-2 mb-2 mr-2" name="model" onchange="this.form.submit()" form="actions">
+					<select class="custom-select mt-2 mb-2 mr-2" name="model" onchange="$('.container').hide(); this.form.submit()" form="actions">
 						{% for model in Config.MODELS %}
 						<option {{ 'selected' if session.model==model }} value="{{ model }}">{{ model }}</option>
 						{% endfor %}
@@ -134,12 +134,10 @@
 			$("#" + select).append(new Option(value, value, false, true));
 		});
 	};
-
 	
 	$(function () {
   		$('[data-toggle="popover"]').popover()
 	})
 	
-
 </script>
 {% endblock %}
