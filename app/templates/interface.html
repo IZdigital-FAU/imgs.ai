@@ -9,10 +9,10 @@
 <input hidden id="file" type="file" name="file" multiple onchange="$('.container').hide(); this.form.submit()" form="upload">
 <select hidden id="add-neg" name="add-neg" multiple form="actions"></select>
 
-<div class="container">
+<div class="container" style="visibility:hidden">
 	<div class="row">
 		<div class="col">
-			<div class="grid pos" style="visibility:hidden;">
+			<div class="grid pos">
 				{% for idx in session.pos_idxs %}
 				<div style="max-width: {{ session.size }}px" class="grid-item pos" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href="{{ links[idx]|safe }}">
 					<img style="width:100%" class="grid-item-img pos" src="{{ images[idx]|safe }}" value="{{ idx }}" />
@@ -22,7 +22,7 @@
 		</div>
 		{% if session.neg_idxs %}
 		<div class="col">
-			<div class="grid neg" style="visibility:hidden">
+			<div class="grid neg">
 				{% for idx in session.neg_idxs %}
 				<div style="max-width: {{ session.size }}px" class="grid-item neg" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
 					<img style="width:100%" class="grid-item-img neg" src="{{ images[idx]|safe }}" value="{{ idx }}" />
@@ -90,7 +90,7 @@
 
 	<div class="row">
 		<div class="col">
-			<div class="grid res" style="visibility:hidden">
+			<div class="grid res">
 				{% for idx in session.res_idxs %}
 				<div style="max-width: {{ session.size }}px" class="grid-item res" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
 					<img style="max-width: 100%" class="grid-item-img res" src="{{ images[idx]|safe }}"
@@ -106,17 +106,15 @@
 <script>
 
 	var $grid_pos = $(".grid.pos").imagesLoaded(function () {
-		$grid_pos.css("visibility", "visible");
 		$grid_pos.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.pos", gutter: 3});
   });
 
 	var $grid_neg = $(".grid.neg").imagesLoaded(function () {
-		$grid_neg.css("visibility", "visible");
 		$grid_neg.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.neg", gutter: 3});
 	});
 
 	var $grid_res = $(".grid.res").imagesLoaded(function () {
-		$grid_res.css("visibility", "visible");
+		$(".container").css("visibility", "visible");
 		$grid_res.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.res", gutter: 3});
   });
 
