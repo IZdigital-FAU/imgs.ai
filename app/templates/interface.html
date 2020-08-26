@@ -123,7 +123,7 @@
 	});
 
 	$(".grid-item").on("dblclick", function (event) {
-		window.location.href = $(this).attr("meta-href");
+		window.open($(this).attr("meta-href"), "_blank");
 	});
 
 	function return_active(select) {
