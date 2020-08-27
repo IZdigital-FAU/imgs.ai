@@ -28,7 +28,7 @@ class SignupForm(FlaskForm):
             EqualTo("password", message="Passwords must match."),
         ],
     )
-    submit = SubmitField("Register")
+    submit = SubmitField("Register", render_kw={"class": "btn btn-light"})
 
 
 class LoginForm(FlaskForm):
@@ -36,7 +36,7 @@ class LoginForm(FlaskForm):
         "Email", validators=[DataRequired(), Email(message="Enter a valid email.")]
     )
     password = PasswordField("Password", validators=[DataRequired()])
-    submit = SubmitField("Log In")
+    submit = SubmitField("Log In", render_kw={"class": "btn btn-light"})
 
 
 class ResourceSelectionForm(FlaskForm):

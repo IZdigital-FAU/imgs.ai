@@ -2,6 +2,22 @@
 <html>
 
 <head>
+
+	<!-- Twitter card -->
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="imgs.ai" />
+	<meta name="twitter:description" content="A fast, dataset-agnostic, deep visual search engine for digital art history" />
+	<meta name="twitter:image" content="https://imgs.ai/static/social.jpg" />
+
+	<!-- Facebook OG -->
+	<meta property="og:title" content="imgs.ai" />
+	<meta property="og:site_name" content="imgs.ai" />
+	<meta property="og:url" content="https://imgs.ai/" />
+	<meta property="og:description" content="A fast, dataset-agnostic, deep visual search engine for digital art history" />
+	<meta property="og:image" content="https://imgs.ai/static/social.jpg" />
+	<meta property="og:type" content="website" />
+	<meta property="og:locale" content="en_US" />
+
 	<title>{% block title %}{% endblock %}</title>
 	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css.css') }}">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"

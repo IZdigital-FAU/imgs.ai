@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="row">
+		<div class="col">
+			
+			<h4>Selecting query images</h4>
+			<p>The <i>imgs.ai</i> <a href="{{ url_for('interface') }}">Interface</a> consists of two halves, divided by a toolbar. The upper half shows the query images, the lower half shows the search results. Immediately after logging in, the lower half will show a random selection of images from the current dataset. Query images can be added by selecting images from the lower half and clicking either the "Positive" or "Negative" buttons, or by clicking the "Upload" button and uploading a local file to the server. Query images can be removed by selecting them and clicking the Remove button.</p>
+			
+			<h4>Positive and negative examples</h4>
+			<p>Query images can be defined either as positive or negative examples. Positive examples return similar results, negative examples return dissimilar results. A common use case is to define unwanted results of an initial search as negative examples, thus refining the search (see <a href="#Examples">Examples</a> below).</p>
+			
+			<h4>Inspecting images</h4>
+			<p>Double-clicking an image will open either a full resolution file (in local datasets), or the institutional website that the image is attached to (in live datasets).</p>
+			
+			<h4>Cross-dataset search</h4>
+			<p>On switching datasets, all positive query images will be kept and can thus be used with the new dataset. This allows an infinite, cross-dataset search. Depending on the number of images this can take from a few seconds (for a single image) to several minutes (for 10+) images.</p>
+						
+			<h4>Datasets</h4>
+			<b>The datasets made available through this beta of <i>imgs.ai</i> are intended for research purposes only. Downloading of images is strictly prohibited.</b> The following datasets can be selected:</p>
+			<ul>
+				<li><i>Annunciations</i>. An iconographic dataset of annunciation images, scraped from multiple art-historical image archives.</li>
+				<li><i>MoMA</i>. All works in the Museum of Modern Art, New York, collection that are available online. This is a live dataset, images are pulled from the MoMA servers on request, and double-clicking an image opens the MoMA website work page.</li>
+				<li><i>Met</i>. [...]</li>
+				<li><i>Harvard</i>. [...]</li>
+				<li><i>Rezeption</i>. [...]</li>
+				<li><i>CelebA</i>. [...]</li>
+				<li><i>Rijksmuseum</i>. [...]</li>
+			</ul>
+			
+			<h4>Embeddings</h4>
+			<p><i>imgs.ai</i> builds on the idea of <a href="https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture">neural network embeddings</a>: the automated extraction of meaningful features from large corpora of images. The system offers four different kinds of embeddings to guide the search out of the box but can be easily extended through scripting (in the local version, see <a href="#Training">Training</a>). Please note that not all embeddings are available for every test dataset, depending on the nature of the dataset. For instance, for the Harvard scientific instrument dataset, which consists almost exclusively of inanimate objects, human poses are irrelevant and thus unavailable.</p>
+			<ul>
+				<li><i>vgg19</i>. [...]</li>
+				<li><i>pose</i>. [...]</li>
+				<li><i>face</i>. [...]</li>
+				<li><i>raw</i>. [...]</li>
+			</ul>
+			
+			<h4>Metrics</h4>
+			<p>[...]</p>
+			<ul>
+				<li><i>centroid</i>. [...]</li>
+				<li><i>ranking</i>. [...]</li>
+			</ul>
+			
+			<h4>Distances</h4>
+			<p>The distance between two points in an embedding space, and thus the similarity of the embedded images, can be measured in several ways.</p>
+			<ul>
+				<li><i>manhattan</i>. [...]</li>
+				<li><i>angular</i>. [...]</li>
+				<li><i>euclidean</i>. [...]</li>
+			</ul>
+			
+			<h4>More settings</h4>
+			<p>The number of neighbors to pull for each search, as well as the global image size, can be changed on the <a href="{{ url_for('settings') }}">Settings</a> page.</p>
+			
+			<h4 id="Training">Training</h3>
+			<p>User datasets can only be added to the system when it is run locally. We will make <i>imgs.ai</i> available under an open source license soon.</p>
+			
+			<h4 id="Examples">Examples</h4>
+			<ul>
+				<li><a href="{{ url_for('static', filename='moma.gif') }}">Simple upload search (dataset: MoMA)</a></li>
+				<li><a href="{{ url_for('static', filename='rezeption.gif') }}">Multiple embedding search from difficult query (dataset: Rezeption)</a></li>
+				<li><a href="{{ url_for('static', filename='met.gif') }}">Positive/negative, multiple embedding search across datasets (datasets: Met, CelebA)</a></li>
+			</ul>
+		</div>
+</div>
+{% endblock %}

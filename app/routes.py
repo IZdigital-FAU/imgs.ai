@@ -20,6 +20,11 @@ def index():
     return render_template("index.html", title="imgs.ai")
 
 
+@app.route("/help")
+def help():
+    return render_template("help.html", title="imgs.ai")
+
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     form = SignupForm()
