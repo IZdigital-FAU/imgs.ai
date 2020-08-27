@@ -21,6 +21,7 @@ def index():
 
 
 @app.route("/help")
+@login_required
 def help():
     return render_template("help.html", title="imgs.ai")
 
