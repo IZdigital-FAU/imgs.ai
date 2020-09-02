@@ -19,21 +19,6 @@
 	<meta property="og:locale" content="en_US" />
 
 	<title>{% block title %}{% endblock %}</title>
-	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css.css') }}">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
-		integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
-		crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js"
-		integrity="sha512-S5PZ9GxJZO16tT9r3WJp/Safn31eu8uWrzglMahDT4dsmgqWonRY9grk3j+3tfuPr9WJNsfooOR7Gi7HL5W2jw=="
-		crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/packery/2.1.2/packery.pkgd.min.js"
-		integrity="sha512-0MI+hf6awKKUfXzhhTLCpr6+YMDyrrHM+JG5rcjCSCLnl39u0VqNU2XDkwzK/AH3yyaoricfVX0p/PzOFHxWNw=="
-		crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/draggabilly/2.3.0/draggabilly.pkgd.min.js"
-		integrity="sha512-wrqGZ9AlrZss+bvssqlLBHyZISI7FVl0JoBDZ4frb4Udgj1IDcip4ausWVzf80m52bdDv5sihhtBsjZgraoQhQ=="
-		crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.4.4/umd/popper.min.js"
-		integrity="sha512-eUQ9hGdLjBjY3F41CScH3UX+4JDSI9zXeroz7hJ+RteoCaY+GP/LDoM8AO+Pt+DRFw3nXqsjh9Zsts8hnYv8/A==" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -41,6 +26,7 @@
 	{% include "navbar.html" %}
 	{% from "bootstrap/form.html" import render_form, render_field %}
 	{% block content %}{% endblock %}
+	<!-- <script src="{{url_for('static', filename='dist/main.js')}}"></script> -->
 </body>
 
 </html>

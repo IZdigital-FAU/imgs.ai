@@ -103,39 +103,7 @@
 
 </div>
 
-<script>
-
-	var $grid_pos = $(".grid.pos").imagesLoaded(function () {
-		$grid_pos.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.pos", gutter: 3});
-  });
-
-	var $grid_neg = $(".grid.neg").imagesLoaded(function () {
-		$grid_neg.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.neg", gutter: 3});
-	});
-
-	var $grid_res = $(".grid.res").imagesLoaded(function () {
-		$(".container").css("visibility", "visible");
-		$grid_res.packery({columnWidth: {{ session.size }}, itemSelector: ".grid-item.res", gutter: 3});
-  });
-
-	$(".grid-item-img").on("click", function (event) {
-		$(this).toggleClass("active");
-	});
-
-	$(".grid-item").on("dblclick", function (event) {
-		window.open($(this).attr("meta-href"), "_blank");
-	});
-
-	function return_active(select) {
-		$(".active").each(function () {
-			value = $(this).attr("value");
-			$("#" + select).append(new Option(value, value, false, true));
-		});
-	};
-	
-	$(function () {
-  		$('[data-toggle="popover"]').popover()
-	})
-	
-</script>
+<!-- <script>
+	export const sessionSize = "{{ session.size }}";
+</script> -->
 {% endblock %}

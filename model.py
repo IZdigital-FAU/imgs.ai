@@ -37,16 +37,14 @@ class EmbeddingModel:
     def extend(self, files):
         # Load uploads file
         uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
-        uploads = h5py.File(uploads_file, "a")  # Read/write/create
+        uploads = h5py.File(uploads_file, "r")  # Read/write/create
 
         paths, idxs = upload_imgs_to(files, Config.UPLOADS_PATH)
         embs = self.transform(paths)
 
         for i, idx in enumerate(idxs):
             for emb_type in embs:
-                uploads.create_dataset(
-                    f"{idx}/{emb_type}", compression="lzf", data=embs[emb_type][i]
-                )
+                uploads.create_dataset(f"{idx}/{emb_type}", compression="lzf", data=embs[emb_type][i])
 
         # Unload uploads file
         uploads.close()
