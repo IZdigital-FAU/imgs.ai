@@ -8,6 +8,7 @@ from app.session import Session
 from config import Config
 import time
 import os
+from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
 
 
 @login_manager.user_loader
@@ -186,3 +187,11 @@ def interface():
         links=links,
         images=images
     )
+
+@app.route("/pipeline", methods=["GET", "POST"])
+@login_required
+def pipeline():
+    embedders = {emb:act for emb, act in zip(['Poses', 'VGG19', 'Raw', 'Face'], [''] * 4)}
+    reducers = ['PCA', 'TSNE']
+
+    return render_template('pipeline_composition.html', embedders=embedders, reducers=reducers)

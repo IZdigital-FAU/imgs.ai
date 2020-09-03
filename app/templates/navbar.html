@@ -1,17 +1,27 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+{% from "macros.html" import nav_link with context %}
+
+<nav class="navbar navbar-expand-lg nav-pills navbar-dark bg-dark">
 	<ul class="navbar-nav mr-auto">
-		<li class="nav-item"><a class="nav-link" href="/">About</a></li>
-		<li class="nav-item"><a class="nav-link" href="{{ url_for('interface') }}">Interface</a></li>
-		<li class="nav-item"><a class="nav-link" href="{{ url_for('settings') }}">Settings</a></li>
-		<li class="nav-item"><a class="nav-link" href="{{ url_for('help') }}">Help</a></li>
+		{{ nav_link('index', 'About') }}
+		{{ nav_link('interface', 'Interface') }}
+		{{ nav_link('pipeline', 'Pipeline Composer') }}
+		{{ nav_link('settings', 'Settings') }}
+		<!-- <a class="nav-item nav-link" href="/">About</a>
+		<a class="nav-item nav-link" href="{{ url_for('interface') }}">Interface</a>
+		<a class="nav-item nav-link" href="{{ url_for('pipeline') }}">Pipeline Composer</a>
+		<a class="nav-item nav-link" href="{{ url_for('settings') }}">Settings</a>
+		<a class="nav-item nav-link" href="{{ url_for('help') }}">Help</a> -->
 		{% if not current_user.is_anonymous and current_user.id==1%}
-		<li class="nav-item"><a class="nav-link" href="{{ url_for('users') }}">User Management</a></li>
+			{{ nav_link('users', 'User Management') }}
+			<!-- <a class="nav-item nav-link" href="{{ url_for('users') }}">User Management</a> -->
 		{% endif %}
 		{% if current_user.is_anonymous %}
-		<li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
+			{{ nav_link('login', 'Login') }}
+			<!-- <a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a> -->
 		{% else %}
-		<li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
-		<li class="nav-item"><a class="nav-link" href="https://docs.google.com/document/d/1qGMsi2W8YBXowaEs0aeH5EdZk_JRQgqgpE1VRX0pto0/edit?usp=sharing">BETA: Report Bug</a></li>
+			{{ nav_link('logout', 'Logout') }}
+			<!-- <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a> -->
+			<a class="nav-item nav-link" href="https://docs.google.com/document/d/1qGMsi2W8YBXowaEs0aeH5EdZk_JRQgqgpE1VRX0pto0/edit?usp=sharing">BETA: Report Bug</a>
 		{% endif %}
 	</ul>
 </nav>
