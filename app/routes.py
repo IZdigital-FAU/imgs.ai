@@ -126,26 +126,35 @@ def interface():
     # Actions
     if "btn" in request.form:
         if request.form["btn"] == "Positive":
-            session.pos_idxs = list(
-                set(session.pos_idxs) | set(request.form.getlist("add-pos"))
-            )  # Union of sets
-            session.neg_idxs = list(
-                set(session.neg_idxs) - set(request.form.getlist("add-pos"))
-            )  # Difference of sets
+            new_pos = set(request.form.getlist("add-pos"))
+            session.pos_idxs = list(set(session.pos_idxs) | new_pos) # Union of sets
+            session.neg_idxs = list(set(session.neg_idxs) - set(request.form.getlist("add-pos")))  # Difference of sets
+            log.debug(f'{current_user} added {len(new_pos)} positives')
+
         elif request.form["btn"] == "Remove":
-            session.pos_idxs = list(
-                set(session.pos_idxs) - set(request.form.getlist("remove"))
-            )  # Difference of sets
-            session.neg_idxs = list(
-                set(session.neg_idxs) - set(request.form.getlist("remove"))
-            )  # Difference of sets
+            removables = set(request.form.getlist("remove"))
+            session.pos_idxs = list(set(session.pos_idxs) - removables)  # Difference of sets
+            session.neg_idxs = list(set(session.neg_idxs) - removables)  # Difference of sets
+            log.debug(f'{current_user} removed {removables} from search')
+
         elif request.form["btn"] == "Negative":
-            session.neg_idxs = list(
-                set(session.neg_idxs) | set(request.form.getlist("add-neg"))
-            )  # Union of sets
-            session.pos_idxs = list(
-                set(session.pos_idxs) - set(request.form.getlist("add-neg"))
-            )  # Difference of sets
+            session.neg_idxs = list(set(session.neg_idxs) | set(request.form.getlist("add-neg")))  # Union of sets
+            session.pos_idxs = list(set(session.pos_idxs) - set(request.form.getlist("add-neg")))  # Difference of sets
+
+        elif request.form["btn"] == "Clear":
+            session.neg_idxs = []
+            session.pos_idxs = []
+
+    # Handle single drag&drops
+    if 'add-pos' in request.form:
+        new_pos = set(request.form.getlist("add-pos"))
+        session.pos_idxs = list(set(session.pos_idxs) | new_pos) # Union of sets
+        session.neg_idxs = list(set(session.neg_idxs) - set(request.form.getlist("add-pos")))  # Difference of sets
+        log.debug(f'{current_user} added {len(new_pos)} positives')
+
+    if 'add-neg' in request.form:
+        session.neg_idxs = list(set(session.neg_idxs) | set(request.form.getlist("add-neg")))  # Union of sets
+        session.pos_idxs = list(set(session.pos_idxs) - set(request.form.getlist("add-neg")))  # Difference of sets
 
     # Model
     if "model" in request.form:
@@ -164,6 +173,9 @@ def interface():
 
     # Store in cookie
     session.store(flask_session)
+
+    log.debug(f'Positive indices: {session.pos_idxs}')
+    log.debug(f'Negative indices: {session.neg_idxs}')
 
     return render_template(
         "interface.html",

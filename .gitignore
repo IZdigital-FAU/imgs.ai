@@ -9,3 +9,4 @@ migrations/
 users.db
 *.log
 uploads/
+static/node_modules

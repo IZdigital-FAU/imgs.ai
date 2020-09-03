@@ -6,12 +6,14 @@
 <form id="actions" action="{{ url_for('interface') }}" method="POST"></form>
 <select hidden id="add-pos" name="add-pos" multiple form="actions"></select>
 <select hidden id="remove" name="remove" multiple form="actions"></select>
-<input hidden id="file" type="file" name="file" multiple onchange="$('.container').hide(); this.form.submit()" form="upload">
 <select hidden id="add-neg" name="add-neg" multiple form="actions"></select>
+<input hidden id="file" type="file" name="file" multiple onchange="$('.container').hide(); this.form.submit()" form="upload">
 
-<div class="container" style="visibility:hidden">
+
+<!-- Query Images -->
+<div class="container" style="visibility:hidden;">
 	<div class="row">
-		<div class="col">
+		<div class="col" style="background-color: lightblue" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<div class="grid pos">
 				{% for idx in session.pos_idxs %}
 				<div style="max-width: {{ session.size }}px" class="grid-item pos" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href="{{ links[idx]|safe }}">
@@ -21,11 +23,11 @@
 			</div>
 		</div>
 		{% if session.neg_idxs %}
-		<div class="col">
+		<div class="col" style="background-color: rgb(255, 115, 115)" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<div class="grid neg">
 				{% for idx in session.neg_idxs %}
 				<div style="max-width: {{ session.size }}px" class="grid-item neg" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
-					<img style="width:100%" class="grid-item-img neg" src="{{ images[idx]|safe }}" value="{{ idx }}" />
+					<img style="width:100%" class="grid-item-img neg" src="{{ images[idx]|safe }}" value="{{ idx }}"/>
 				</div>
 				{% endfor %}
 			</div>
@@ -35,6 +37,7 @@
 
 	<hr>
 
+	<!-- Form group -->
 	<div class="row">
 		<div class="col">
 			<div class="form-inline">
@@ -55,6 +58,7 @@
 						onclick="return_active('add-neg')">
 					<input type="submit" class="btn btn-light mt-2 mb-2 mr-2" name="btn" value="Remove" form="actions"
 						onclick="return_active('remove')">
+					<input type="submit" class="btn btn-light mt-2 mb-2 mr-2" name="btn" value="Clear" form="actions">
 				</div>
 			</div>
 			<div class="form-inline">
@@ -82,28 +86,72 @@
 						{% endfor %}
 					</select>
 				</div>
+				<!-- <div class="slidecontainer">
+					<input type="range" min="1" max="100" value="50" class="slider" name="size" onchange="this.form.submit()">
+				</div> -->
 			</div>
 		</div>
 	</div>
 
 	<hr>
 
+	<!-- Output images -->
 	<div class="row">
 		<div class="col">
 			<div class="grid res">
 				{% for idx in session.res_idxs %}
-				<div style="max-width: {{ session.size }}px" class="grid-item res" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
-					<img style="max-width: 100%" class="grid-item-img res" src="{{ images[idx]|safe }}"
-						value="{{ idx }}" />
+				<div style="max-width: {{ session.size }}px" class="grid-item res" data-trigger="hover" data-toggle="popover" data-placement="right" data-content="{{ popovers[idx]|safe }}" meta-href={{ links[idx]|safe }}>
+					<img style="max-width: 100%" class="grid-item-img res" src="{{ images[idx]|safe }}" value="{{ idx }}" id="{{ idx }}" draggable="true" ondragstart="drag(event)"/>
 				</div>
 				{% endfor %}
 			</div>
 		</div>
 	</div>
-
 </div>
 
-<!-- <script>
-	export const sessionSize = "{{ session.size }}";
-</script> -->
+<script src="{{ url_for('static', filename='node_modules/packery/dist/packery.pkgd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='node_modules/imagesloaded/imagesloaded.pkgd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='dragdrop.js') }}"></script>
+<script>
+	$(".grid-item-img").on("mouseenter", function(event) {
+		$(this).toggleClass('hover')
+	});
+	
+	$(".grid-item-img").on("mouseleave", function(event) {
+		$(this).toggleClass('hover')
+	});
+	
+	var $grid_pos = $(".grid.pos").imagesLoaded(function () {
+		$grid_pos.packery({columnWidth: {{session.size}}, itemSelector: ".grid-item.pos", gutter: 3});
+	});
+	
+	var $grid_neg = $(".grid.neg").imagesLoaded(function () {
+		$grid_neg.packery({columnWidth: {{session.size}}, itemSelector: ".grid-item.neg", gutter: 3});
+	});
+	
+	var $grid_res = $(".grid.res").imagesLoaded(function () {
+		$(".container").css("visibility", "visible");
+		$grid_res.packery({columnWidth: {{session.size}}, itemSelector: ".grid-item.res", gutter: 3});
+	});
+	
+	$(".grid-item-img").on("click", function (event) {
+		$(this).toggleClass("active");
+	});
+	
+	$(".grid-item").on("dblclick", function (event) {
+		window.open($(this).attr("meta-href"), "_blank");
+	});
+	
+	function return_active(select) {
+		$(".active").each(function () {
+			value = $(this).attr("value");
+			$("#" + select).append(new Option(value, value, false, true));
+		});
+		console.log($("#" + select))
+	};
+	
+	$(function () {
+		  $('[data-toggle="popover"]').popover()
+	})
+</script>
 {% endblock %}

@@ -18,6 +18,12 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:locale" content="en_US" />
 
+	<link rel="stylesheet" href="{{ url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css.css') }}">
+
+	<script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+
 	<title>{% block title %}{% endblock %}</title>
 </head>
 
@@ -26,7 +32,6 @@
 	{% include "navbar.html" %}
 	{% from "bootstrap/form.html" import render_form, render_field %}
 	{% block content %}{% endblock %}
-	<!-- <script src="{{url_for('static', filename='dist/main.js')}}"></script> -->
 </body>
 
 </html>

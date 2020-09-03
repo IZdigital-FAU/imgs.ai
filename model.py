@@ -72,7 +72,10 @@ class EmbeddingModel:
 
         # Load uploads file
         uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
-        uploads = h5py.File(uploads_file, "a")
+        try:
+            uploads = h5py.File(uploads_file, "a")
+        except OSError as error:
+            print(error)
 
         # Get vectors from indices
         def vectors_from_idxs(idxs):
