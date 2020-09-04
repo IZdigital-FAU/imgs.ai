@@ -145,9 +145,13 @@
 	function return_active(select) {
 		$(".active").each(function () {
 			value = $(this).attr("value");
-			$("#" + select).append(new Option(value, value, false, true));
+			console.log(value)
+			if (value != undefined){
+				$("#" + select).append(new Option(value, value, false, true));
+			} else {
+				console.log(`${$(this)}'s value yielded undefined`)
+			}
 		});
-		console.log($("#" + select))
 	};
 	
 	$(function () {

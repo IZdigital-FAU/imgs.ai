@@ -51,18 +51,7 @@ class EmbeddingModel:
 
         return idxs
 
-    def get_nns(
-        self,
-        emb_type,
-        n,
-        pos_idxs,
-        neg_idxs,
-        metric,
-        mode="ranking",
-        search_k=-1,
-        limit=None,
-    ):
-
+    def get_nns(self, emb_type, n, pos_idxs, neg_idxs, metric, mode="ranking", search_k=-1, limit=None):
         # Load neighborhood file
         hood_file = os.path.join(
             self.model_folder, self.config["hood_files"][emb_type][metric]
@@ -112,9 +101,7 @@ class EmbeddingModel:
                 centroid, n, search_k=search_k, include_distances=False
             )
 
-        elif (
-            len(pos_idxs) > 1 and len(neg_idxs) == 0 and mode == "centroid"
-        ):  # Centroid
+        elif (len(pos_idxs) > 1 and len(neg_idxs) == 0 and mode == "centroid"):  # Centroid
             vectors = np.array(vectors_from_idxs(pos_idxs))
             centroid = vectors.mean(axis=0)
             nns = ann.get_nns_by_vector(

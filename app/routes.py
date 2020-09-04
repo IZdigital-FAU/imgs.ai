@@ -129,7 +129,7 @@ def interface():
         if request.form["btn"] == "Positive":
             new_pos = set(request.form.getlist("add-pos"))
             session.pos_idxs = list(set(session.pos_idxs) | new_pos) # Union of sets
-            session.neg_idxs = list(set(session.neg_idxs) - set(request.form.getlist("add-pos")))  # Difference of sets
+            session.neg_idxs = list(set(session.neg_idxs) - new_pos)  # Difference of sets
             log.debug(f'{current_user} added {len(new_pos)} positives')
 
         elif request.form["btn"] == "Remove":
@@ -187,6 +187,7 @@ def interface():
         links=links,
         images=images
     )
+
 
 @app.route("/pipeline", methods=["GET", "POST"])
 @login_required
