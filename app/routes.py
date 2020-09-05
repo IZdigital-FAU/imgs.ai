@@ -192,7 +192,9 @@ def interface():
 @app.route("/pipeline", methods=["GET", "POST"])
 @login_required
 def pipeline():
-    embedders = {emb:act for emb, act in zip(['Poses', 'VGG19', 'Raw', 'Face'], [''] * 4)}
+    embedders = {emb:act for emb, act in zip(['Raw', 'VGG19', 'Face', 'Poses'], [''] * 4)}
     reducers = ['PCA', 'TSNE']
+
+    print(request.form)
 
     return render_template('pipeline_composition.html', embedders=embedders, reducers=reducers)
