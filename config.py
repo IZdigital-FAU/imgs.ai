@@ -6,7 +6,7 @@ username = pwd.getpwuid(os.getuid()).pw_name
 
 
 class Config(object):
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "you-will-never-guess"
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "uzfpfz783r3pfhf37fghf3p98PBCBLBF9pf83f3bKJB9flkv9873jebK94327BKLJHB"
     SQLALCHEMY_DATABASE_URI = (
         f"sqlite:////home/{username}/models/users.db"  # Absolute
     )

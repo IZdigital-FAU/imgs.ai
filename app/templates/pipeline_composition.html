@@ -4,60 +4,80 @@
 {% block content %}
 <div class="container jumbotron">
 
+    <form action="{{ url_for('pipeline') }}" id="pipelineForm" method="POST">
+
+    <select hidden multiple id="activeElements" name="activeElements"></select>
+
     <!-- Model selection -->
-    <form action="{{ url_for('pipeline') }}" method="POST">
-
-    <select hidden name="embedders" id="embedderSelect"></select>
-
     <div class="row">
         <ul class="list-group col-6">
             {% for embedder in embedders %}
-            <li class="list-group-item list-group-item-action" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}_settings" role="button" aria-expanded="false" aria-controls="{{embedder}}_settings">{{embedder}}</li>
-            <div class="collapse multi-collapse" id="{{embedder}}_settings">
-                <div class="card card-body">
-                    <div class="row">
-                        <div class="col-5">
-                            {% if embedder == 'Raw' %}
-                                <div class="slidecontainer">
-                                    <label for="#resolution">Resolution</label>
-                                    <input type="range" min="32" max="512" value="50" class="slider" id="resolution">
-                                </div>
-                            {% else %}
-                                <div class="slidecontainer">
-                                    <label for="#featureLength{{embedder}}">Feature Length</label>
-                                    <input type="range" min="32" max="512" value="50" class="slider" id="featureLength{{embedder}}">
-                                </div>
-                            {% endif %}
-                            {% if embedder in ('Face', 'Poses') %}
-                                <div class="slidecontainer">
-                                    <label for="#expectedPeople{{embedder}}">Expected no. of people</label>
-                                    <input type="range" min="1" max="10" value="50" class="slider" id="expectedPeople{{embedder}}">
-                                </div>
-                            {% endif %}
-                            {% if embedder == 'Poses' %}
-                                <div class="slidecontainer">
-                                    <label for="#minScore">Min. confidence score</label>
-                                    <input type="range" min="0" max="1" value=".5" class="slider" id="minScore">
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="col-7">
-                            <!-- Dimensionality Reduction -->
-                            {% for reducer in reducers %}
-                            <li class="list-group-item list-group-item-action" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}{{reducer}}_settings" role="button" aria-expanded="false" aria-controls="{{embedder}}_settings">{{reducer}}</li>
-                            <div class="collapse multi-collapse" id="{{embedder}}{{reducer}}_settings">
-                                <div class="card card-body">
+                <fieldset id="{{embedder}}_set">
+                <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder]['active'] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}_settings">{{embedder}}</li>
+                <div class="collapse multi-collapse" id="{{embedder}}_collapse">
+                    <div class="card card-body">
+                        <div class="row">
+                            <div class="col-5">
+                                {% if embedder == 'Raw' %}
                                     <div class="slidecontainer">
-                                        <label for="#{{embedder}}{{reducer}}_dim">Dimensionality</label>
-                                        <input type="range" min="50" max="1000" value="100" class="slider" id="{{embedder}}{{reducer}}_dim">
+                                        <label for="#resolution">Resolution</label>
+                                        <input type="range" min="32" max="512" value="" class="slider" id="resolution" name="resolution">
+                                    </div>
+                                {% else %}
+                                    <div class="slidecontainer">
+                                        <label for="#featureLength{{embedder}}">Feature Length</label>
+                                        <input type="range" min="32" max="512" value="" class="slider" id="{{embedder}}_featureLength" name="{{embedder}}_featureLength">
+                                    </div>
+                                {% endif %}
+                                {% if embedder in ('Face', 'Poses') %}
+                                    <div class="slidecontainer">
+                                        <label for="#expectedPeople{{embedder}}">Expected no. of people</label>
+                                        <input type="range" min="1" max="10" value="" class="slider" id="{{embedder}}_expectedPeople" name="{{embedder}}_expectedPeople">
+                                    </div>
+                                {% endif %}
+                                {% if embedder == 'Poses' %}
+                                    <div class="slidecontainer">
+                                        <label for="#minScore">Min. confidence score</label>
+                                        <input type="range" min="0" max="1" value="" class="slider" id="minScore" name="minScore">
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- <div class="row">
+                                {% for reducer in reducers %}
+                                <div class="col-5">
+                                <div class="list-group" id="{{embedder}}_{{reducer}}_settings" role="tablist">
+                                    <a class="list-group-item list-group-item-action" data-toggle="list" href="#{{embedder}}_{{reducer}}_tab" role="tab" aria-controls="{{embedder}}_{{reducer}}">{{reducer}}</a>
+                                </div>
+                                </div>
+                                <div class="col-4">
+                                <div class="tab-content" id="nav-tabContent">
+                                    <div class="tab-pane fade" id="{{embedder}}_{{reducer}}_tab" role="tabpanel" aria-labelledby="{{embedder}}_{{reducer}}_tab-list">
+                                        <label for="#{{embedder}}_{{reducer}}_dim">Dimensionality</label>
+                                        <input type="range" min="50" max="1000" value="100" class="slider" id="{{embedder}}_{{reducer}}_dim" name="{{embedder}}_{{reducer}}_dim">
                                     </div>
                                 </div>
+                                </div>
+                                {% endfor %}
+                            </div> -->
+                            
+                            <!-- Dimensionality Reduction -->
+                            <div class="col-7">
+                                {% for reducer in reducers %}
+                                <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder][reducer] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}_{{reducer}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}_{{reducer}}_settings" id="{{embedder}}_{{reducer}}">{{reducer}}</li>
+                                <div class="collapse multi-collapse" id="{{embedder}}_{{reducer}}_collapse" role="list">
+                                    <div class="card card-body">
+                                        <div class="slidecontainer">
+                                            <label for="#{{embedder}}_{{reducer}}_dim">Dimensionality</label>
+                                            <input type="range" min="50" max="1000" value="" class="slider" id="{{embedder}}_{{reducer}}_dim" name="{{embedder}}_{{reducer}}_dim">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
-            </div>
             {% endfor %}
         </ul>
         <div class="col-6">
@@ -80,9 +100,28 @@
         </div>
     </div>
     <br>
-    <div class="text-center"><button class="btn btn-primary" type="submit">Embed</button></div>
-    </form>
+</form>
+    <div class="text-center"><button class="btn btn-primary" type="submit" onclick="submitActive()">Embed</button></div>
 </div>
 
-<script src="{{ url_for('static', filename='pipeline.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        $('.active').each(function(){
+            let collapseIdentifier = $(this).attr('href')
+            console.log(collapseIdentifier)
+            $(collapseIdentifier).collapse('show')
+        })
+    })
+
+    function submitActive(){
+        $('.active').each(function(){
+            let value = $(this).attr('id');
+            console.log(value)
+            $('#activeElements').append(new Option(value, value, false, true))
+        })
+        $('#pipelineForm').submit();
+    }
+</script>
+
+<!-- <script src="{{ url_for('static', filename='pipeline.js') }}"></script> -->
 {% endblock %}

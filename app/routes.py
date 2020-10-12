@@ -192,9 +192,31 @@ def interface():
 @app.route("/pipeline", methods=["GET", "POST"])
 @login_required
 def pipeline():
-    embedders = {emb:act for emb, act in zip(['Raw', 'VGG19', 'Face', 'Poses'], [''] * 4)}
+    embedders = ['Raw', 'VGG19', 'Face', 'Poses']
     reducers = ['PCA', 'TSNE']
+    
+    embedder_data = {}
 
-    print(request.form)
+    for embedder in embedders:
+        if embedder not in embedder_data:
+            embedder_data[embedder] = {'active':False}
+        for reducer in reducers:
+            if embedder not in embedder_data:
+                embedder_data[embedder] = {reducer:False}
+            else:
+                embedder_data[embedder][reducer] = False
 
-    return render_template('pipeline_composition.html', embedders=embedders, reducers=reducers)
+    print(embedder_data)
+
+    if request.method == "POST":
+        print(request.form)
+        for active in request.form.getlist("activeElements"):
+            if not active:
+                continue
+            
+            if '_' in active:
+                embedder, reducer = active.split('_')
+                embedder_data[embedder]['active'] = True
+                embedder_data[embedder][reducer] = True
+            
+    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers)
