@@ -10,6 +10,8 @@ import time
 import os
 from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
 from train import make_model
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 
 @login_manager.user_loader
@@ -214,9 +216,7 @@ def pipeline():
         print(request.form)
 
         from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
-
-        selected_embedders = {key.lower():val for key, val in zip(embedders, [Embedder_Raw(), Embedder_VGG19(),
-                                                                                Embedder_Face(), Embedder_Poses()])}
+        selected_embedders = {}
 
         for active in request.form.getlist("activeElements"):
             if not active:
@@ -229,9 +229,26 @@ def pipeline():
                 embedder_data[embedder][reducer] = True
 
                 # Configure embedders here
-                selected_embedders[embedder.lower()]
+                if embedder == 'Raw':
+                    selected_embedders[embedder.lower()] = Embedder_Raw()
+                    selected_embedders[embedder.lower()].resolution = request.form['resolution']
+                elif embedder == 'VGG19':
+                    selected_embedders[embedder.lower()] = Embedder_VGG19()
+                    selected_embedders[embedder.lower()].feature_length = request.form[f'{embedder}_featureLength']
+                elif embedder == 'Face':
+                    selected_embedders[embedder.lower()] = Embedder_Face()
+                    selected_embedders[embedder.lower()].expected_people = request.form[f'{embedder}_expectedPeople']
+                elif embedder == 'Poses':
+                    selected_embedders[embedder.lower()] = Embedder_Poses()
+                    selected_embedders[embedder.lower()].feature_length = request.form[f'{embedder}_featureLength']
+                    selected_embedders[embedder.lower()].expected_people = request.form[f'{embedder}_expectedPeople']
+                    selected_embedders[embedder.lower()].min_score = request.form[f'{embedder}_minScore']
 
-        print('Selected embedders:', selected_embedders)
+                if reducer == 'PCA':
+                    selected_embedders[embedder.lower()].reducer = PCA(n_components=request.form[f'{embedder}_{reducer}_dim'])
+                elif reducer == 'TSNE':
+                    selected_embedders[embedder.lower()].reducer = TSNE(n_components=request.form[f'{embedder}_{reducer}_dim'])
+
 
         project_name = request.form['project_name']
         model_folder = os.path.join('/home/oleg/olegsModels', project_name)

@@ -222,3 +222,5 @@ def make_model(model_folder, embedders, source, num_workers=64, shuffle=False, m
             embedders=embedders,
             num_workers=num_workers,
         )
+
+    log.info('Done')
