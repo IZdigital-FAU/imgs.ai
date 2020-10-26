@@ -13,6 +13,7 @@ import sys
 import random
 import numpy as np
 from annoy import AnnoyIndex
+from app import log
 
 
 def collect_embed(X, embedders, data_root, num_workers, embs_file):
@@ -86,19 +87,12 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
     embs.close()
 
 
-def train(
-    X,
-    model_folder,
-    embedders,
-    data_root,
-    num_workers,
-    metrics=["angular", "euclidean", "manhattan"],
-    n_trees=10,
-):
-
+def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular", "euclidean", "manhattan"], n_trees=10):
+    log.info(f'Checking {model_folder}')
     new_dir(model_folder)
 
     # Set up
+    log.info(f'Setting up config')
     config = {}
     config["data_root"] = data_root
     config["metrics"] = metrics
@@ -113,11 +107,12 @@ def train(
     config["model_len"] = len(valid_idxs)
 
     # Allocate cache
+    log.info(f'Allocating cache')
     cache_file = os.path.join(model_folder, "cache.hdf5")
     cache = h5py.File(cache_file, "w")
 
     # Reduce if reducer given
-    print("Reducing dimensions")
+    log.info(f'Applying dimensionality reduction')
     for emb_type, embedder in embedders.items():
         data = embs[emb_type]
         if embedder.reducer:
@@ -125,7 +120,7 @@ def train(
         cache.create_dataset(emb_type, data=data, compression="lzf")
 
     # Build and save neighborhoods
-    print("Building neighborhoods")
+    log.info(f'Building neighborhoods')
     config["hood_files"] = {}
     for emb_type, embedder in embedders.items():
         config["hood_files"][emb_type] = {}
@@ -143,7 +138,7 @@ def train(
             config["hood_files"][emb_type][metric] = f"{emb_type}_{metric}.ann"
 
     # Align and write metadata
-    print("Aligning metadata")
+    log.info(f'Aligning metadata')
     meta = []
     for idx in valid_idxs:
         meta.append(X[idx])
@@ -152,7 +147,7 @@ def train(
     config["meta_file"] = "metadata.csv"
 
     # Save fitted embedders
-    print("Writing additional data")
+    log.info("Writing additional data")
     for emb_type, embedder in embedders.items():
         embedder.model = None  # Delete models to save memory
     embedders_file = os.path.join(model_folder, "embedders.pickle")
@@ -183,40 +178,43 @@ def train(
     os.remove(cache_file)
 
 
-def make_model(
-    model_folder, embedders, source, num_workers=64, shuffle=False, max_data=None
-):
+def arrange_data(X, shuffle=0, max_data=0):
+    log.info('Arrange data')
+    if shuffle: random.shuffle(X)
+    if max_data: X = X[:max_data]
+    return X
+
+
+def make_model(model_folder, embedders, source, num_workers=64, shuffle=False, max_data=None):
+    """Function creates models based on existing image data in the `model_folder`"""
     X = []
 
+    log.info('Reading url data')
     if source.endswith(".csv"):
         with open(source, "r") as f:
             meta = csv.reader(f)
             for row in meta:
-                file = row[0]
+                fname = row[0]
                 url = row[1]
-                X.append([file, url] + [field for field in row[2:]])
-        if shuffle:
-            random.shuffle(X)
-        if max_data:
-            X = X[:max_data]
-        train(
-            X=X,
-            data_root=None,
-            model_folder=model_folder,
-            embedders=embedders,
-            num_workers=num_workers,
-        )
+                X.append([fname, url] + [field for field in row[2:]])
+        
+        X = arrange_data(X, shuffle, max_data)
 
-    else:
+        log.info('Start training')
+        train(X=X, data_root=None,
+                model_folder=model_folder,
+                embedders=embedders,
+                num_workers=num_workers
+            )
+
+    else: # not csv
         for root, dirs, files in os.walk(source):
-            for file in files:
-                X.append(
-                    [os.path.relpath(os.path.join(root, file), start=source), "", None]
-                )
-        if shuffle:
-            random.shuffle(X)
-        if max_data:
-            X = X[:max_data]
+            for fname in files:
+                X.append([os.path.relpath(os.path.join(root, fname), start=source), "", None])
+        
+        X = arrange_data(X, shuffle, max_data)
+
+        log.info('Start training')
         train(
             X=X,
             data_root=source,

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
 
@@ -39,6 +39,6 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Log In", render_kw={"class": "btn btn-light"})
 
 
-class ResourceSelectionForm(FlaskForm):
-    resource = SelectField("resource", [""], validators=[DataRequired()])
-    submit = SubmitField("Log In")
+class PipelineSelectionForm(FlaskForm):
+    project_name = StringField('ProjectName', validators=[DataRequired()])
+    url_per_line = TextAreaField('UrlPerLine')

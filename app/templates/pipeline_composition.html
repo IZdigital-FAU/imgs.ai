@@ -81,11 +81,19 @@
             {% endfor %}
         </ul>
         <div class="col-6">
+            {{ render_form(form) }}
+            <!--
             <div class="input-group">
                 <div class="input-group-prepend">
-                  <span class="input-group-text">img url per line</span>
+                    <span class="input-group-text">Project name</span>
                 </div>
-                <textarea class="form-control" aria-label="imgurlperline"></textarea>
+                <input type="text" class="form-control" id="projectName" name="projectName" placeholder="Your project name" required>
+            </div>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">source images</span>
+                </div>
+                <textarea class="form-control" aria-label="imgurlperline" id="imgUrlPerLine" name="imgUrlPerLine" placeholder="img url per line"></textarea>
             </div>
             <hr>
             <div class="input-group mb-3">
@@ -97,31 +105,28 @@
                   <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
                 </div>
               </div>
+            -->
+            <div class="text-center"><button class="btn btn-primary" onclick="submitActive()">Create image vectors</button></div>
         </div>
     </div>
     <br>
 </form>
-    <div class="text-center"><button class="btn btn-primary" type="submit" onclick="submitActive()">Embed</button></div>
 </div>
 
 <script>
-    $(document).ready(function() {
-        $('.active').each(function(){
+    $(document).ready(() => {
+        $('.active').each(() => {
             let collapseIdentifier = $(this).attr('href')
-            console.log(collapseIdentifier)
             $(collapseIdentifier).collapse('show')
         })
     })
 
     function submitActive(){
-        $('.active').each(function(){
+        $('.active').each(() => {
             let value = $(this).attr('id');
-            console.log(value)
             $('#activeElements').append(new Option(value, value, false, true))
         })
         $('#pipelineForm').submit();
     }
 </script>
-
-<!-- <script src="{{ url_for('static', filename='pipeline.js') }}"></script> -->
 {% endblock %}

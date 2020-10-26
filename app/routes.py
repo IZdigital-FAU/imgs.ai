@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, request, url_for, send_from_directory
 from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
-from app.forms import SignupForm, LoginForm
+from app.forms import SignupForm, LoginForm, PipelineSelectionForm
 from app import app, log, db, login_manager
 from app.user import User, create_user
 from app.session import Session
@@ -9,6 +9,7 @@ from config import Config
 import time
 import os
 from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
+from train import make_model
 
 
 @login_manager.user_loader
@@ -194,29 +195,56 @@ def interface():
 def pipeline():
     embedders = ['Raw', 'VGG19', 'Face', 'Poses']
     reducers = ['PCA', 'TSNE']
-    
+
     embedder_data = {}
 
+    form = PipelineSelectionForm()
+
+    # Init nested dict of active elements
     for embedder in embedders:
         if embedder not in embedder_data:
-            embedder_data[embedder] = {'active':False}
+            embedder_data[embedder] = {'active': False}
         for reducer in reducers:
             if embedder not in embedder_data:
-                embedder_data[embedder] = {reducer:False}
+                embedder_data[embedder] = {reducer: False}
             else:
                 embedder_data[embedder][reducer] = False
 
-    print(embedder_data)
-
     if request.method == "POST":
         print(request.form)
+
+        from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
+
+        selected_embedders = {key.lower():val for key, val in zip(embedders, [Embedder_Raw(), Embedder_VGG19(),
+                                                                                Embedder_Face(), Embedder_Poses()])}
+
         for active in request.form.getlist("activeElements"):
             if not active:
                 continue
             
             if '_' in active:
+                # Handle front-end active elements
                 embedder, reducer = active.split('_')
                 embedder_data[embedder]['active'] = True
                 embedder_data[embedder][reducer] = True
-            
-    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers)
+
+                # Configure embedders here
+                selected_embedders[embedder.lower()]
+
+        print('Selected embedders:', selected_embedders)
+
+        project_name = request.form['project_name']
+        model_folder = os.path.join('/home/oleg/olegsModels', project_name)
+
+        if not os.path.isdir(model_folder):
+            os.mkdir(model_folder)
+
+        url_file = os.path.join(model_folder, project_name) + ".csv"
+
+        for img_url in request.form['url_per_line'].split():
+            with open(url_file, 'a') as csv:
+                csv.write(f',{img_url}\n')
+
+        make_model(model_folder=model_folder, embedders=selected_embedders, source=url_file)
+
+    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

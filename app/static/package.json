@@ -22,6 +22,7 @@
   "homepage": "https://github.com/zentralwerkstatt/imgs.ai#readme",
   "devDependencies": {},
   "dependencies": {
+    "axios": "^0.21.0",
     "bootstrap": "^4.5.2",
     "imagesloaded": "^4.1.4",
     "jquery": "^3.5.1",
