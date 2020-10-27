@@ -230,24 +230,24 @@ def pipeline():
 
                 # Configure embedders here
                 if embedder == 'Raw':
-                    selected_embedders[embedder.lower()] = Embedder_Raw()
-                    selected_embedders[embedder.lower()].resolution = request.form['resolution']
+                    selected_embedders[embedder] = Embedder_Raw()
+                    selected_embedders[embedder].resolution = int(request.form['resolution'])
                 elif embedder == 'VGG19':
-                    selected_embedders[embedder.lower()] = Embedder_VGG19()
-                    selected_embedders[embedder.lower()].feature_length = request.form[f'{embedder}_featureLength']
+                    selected_embedders[embedder] = Embedder_VGG19()
+                    selected_embedders[embedder].feature_length = int(request.form[f'{embedder}_featureLength'])
                 elif embedder == 'Face':
-                    selected_embedders[embedder.lower()] = Embedder_Face()
-                    selected_embedders[embedder.lower()].expected_people = request.form[f'{embedder}_expectedPeople']
+                    selected_embedders[embedder] = Embedder_Face()
+                    selected_embedders[embedder].expected_people = int(request.form[f'{embedder}_expectedPeople'])
                 elif embedder == 'Poses':
-                    selected_embedders[embedder.lower()] = Embedder_Poses()
-                    selected_embedders[embedder.lower()].feature_length = request.form[f'{embedder}_featureLength']
-                    selected_embedders[embedder.lower()].expected_people = request.form[f'{embedder}_expectedPeople']
-                    selected_embedders[embedder.lower()].min_score = request.form[f'{embedder}_minScore']
+                    selected_embedders[embedder] = Embedder_Poses()
+                    selected_embedders[embedder].feature_length = int(request.form[f'{embedder}_featureLength'])
+                    selected_embedders[embedder].expected_people = int(request.form[f'{embedder}_expectedPeople'])
+                    selected_embedders[embedder].min_score = float(request.form[f'{embedder}_minScore'])
 
                 if reducer == 'PCA':
-                    selected_embedders[embedder.lower()].reducer = PCA(n_components=request.form[f'{embedder}_{reducer}_dim'])
+                    selected_embedders[embedder].reducer = PCA(n_components=int(request.form[f'{embedder}_{reducer}_dim']))
                 elif reducer == 'TSNE':
-                    selected_embedders[embedder.lower()].reducer = TSNE(n_components=request.form[f'{embedder}_{reducer}_dim'])
+                    selected_embedders[embedder].reducer = TSNE(n_components=int(request.form[f'{embedder}_{reducer}_dim']))
 
 
         project_name = request.form['project_name']

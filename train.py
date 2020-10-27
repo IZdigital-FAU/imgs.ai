@@ -186,7 +186,7 @@ def arrange_data(X, shuffle=0, max_data=0):
 
 
 def make_model(model_folder, embedders, source, num_workers=64, shuffle=False, max_data=None):
-    """Function creates models based on existing image data in the `model_folder`"""
+    """Function creates models based on existing image data in the specified `model_folder`"""
     X = []
 
     log.info('Reading url data')

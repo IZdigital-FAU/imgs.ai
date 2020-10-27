@@ -20,47 +20,29 @@
                             <div class="col-5">
                                 {% if embedder == 'Raw' %}
                                     <div class="slidecontainer">
-                                        <label for="#resolution">Resolution</label>
-                                        <input type="range" min="32" max="512" value="" class="slider" id="resolution" name="resolution">
+                                        <label for="#resolution">Resolution <span class="badge badge-primary" id="resolution_number"></span></label>
+                                        <input type="range" min="32" max="512" value="" class="custom-range" id="resolution" name="resolution">
                                     </div>
                                 {% else %}
                                     <div class="slidecontainer">
-                                        <label for="#featureLength{{embedder}}">Feature Length</label>
-                                        <input type="range" min="32" max="512" value="" class="slider" id="{{embedder}}_featureLength" name="{{embedder}}_featureLength">
+                                        <label for="#{{embedder}}_featureLength">Feature Length <span class="badge badge-primary" id="{{embedder}}_featureLength_number"></span></label>
+                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}_featureLength" name="{{embedder}}_featureLength">
                                     </div>
                                 {% endif %}
                                 {% if embedder in ('Face', 'Poses') %}
                                     <div class="slidecontainer">
-                                        <label for="#expectedPeople{{embedder}}">Expected no. of people</label>
-                                        <input type="range" min="1" max="10" value="" class="slider" id="{{embedder}}_expectedPeople" name="{{embedder}}_expectedPeople">
+                                        <label for="#{{embedder}}_expectedPeople">Expected no. of people <span class="badge badge-primary" id="{{embedder}}_expectedPeople_number"></span></label>
+                                        <input type="range" min="1" max="10" value="" class="custom-range" id="{{embedder}}_expectedPeople" name="{{embedder}}_expectedPeople">
                                     </div>
                                 {% endif %}
                                 {% if embedder == 'Poses' %}
                                     <div class="slidecontainer">
-                                        <label for="#minScore">Min. confidence score</label>
-                                        <input type="range" min="0" max="1" value="" class="slider" id="minScore" name="minScore">
+                                        <label for="#minScore">Min. confidence score <span class="badge badge-primary" id="minscore_number"></span></label>
+                                        <input type="range" min="0" max="1" value="" class="custom-range" id="minScore" name="minScore">
                                     </div>
                                 {% endif %}
                             </div>
 
-                            <!-- <div class="row">
-                                {% for reducer in reducers %}
-                                <div class="col-5">
-                                <div class="list-group" id="{{embedder}}_{{reducer}}_settings" role="tablist">
-                                    <a class="list-group-item list-group-item-action" data-toggle="list" href="#{{embedder}}_{{reducer}}_tab" role="tab" aria-controls="{{embedder}}_{{reducer}}">{{reducer}}</a>
-                                </div>
-                                </div>
-                                <div class="col-4">
-                                <div class="tab-content" id="nav-tabContent">
-                                    <div class="tab-pane fade" id="{{embedder}}_{{reducer}}_tab" role="tabpanel" aria-labelledby="{{embedder}}_{{reducer}}_tab-list">
-                                        <label for="#{{embedder}}_{{reducer}}_dim">Dimensionality</label>
-                                        <input type="range" min="50" max="1000" value="100" class="slider" id="{{embedder}}_{{reducer}}_dim" name="{{embedder}}_{{reducer}}_dim">
-                                    </div>
-                                </div>
-                                </div>
-                                {% endfor %}
-                            </div> -->
-                            
                             <!-- Dimensionality Reduction -->
                             <div class="col-7">
                                 {% for reducer in reducers %}
@@ -68,8 +50,8 @@
                                 <div class="collapse multi-collapse" id="{{embedder}}_{{reducer}}_collapse" role="list">
                                     <div class="card card-body">
                                         <div class="slidecontainer">
-                                            <label for="#{{embedder}}_{{reducer}}_dim">Dimensionality</label>
-                                            <input type="range" min="50" max="1000" value="" class="slider" id="{{embedder}}_{{reducer}}_dim" name="{{embedder}}_{{reducer}}_dim">
+                                            <label for="#{{embedder}}_{{reducer}}_dim">Dimensionality <span class="badge badge-primary" id="{{embedder}}_{{reducer}}_dim_number"></span></label>
+                                            <input type="range" min="50" max="1000" value="" class="custom-range" id="{{embedder}}_{{reducer}}_dim" name="{{embedder}}_{{reducer}}_dim">
                                         </div>
                                     </div>
                                 </div>
@@ -82,30 +64,6 @@
         </ul>
         <div class="col-6">
             {{ render_form(form) }}
-            <!--
-            <div class="input-group">
-                <div class="input-group-prepend">
-                    <span class="input-group-text">Project name</span>
-                </div>
-                <input type="text" class="form-control" id="projectName" name="projectName" placeholder="Your project name" required>
-            </div>
-            <div class="input-group">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">source images</span>
-                </div>
-                <textarea class="form-control" aria-label="imgurlperline" id="imgUrlPerLine" name="imgUrlPerLine" placeholder="img url per line"></textarea>
-            </div>
-            <hr>
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">Upload</span>
-                </div>
-                <div class="custom-file">
-                  <input type="file" class="custom-file-input" id="inputGroupFile01">
-                  <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
-                </div>
-              </div>
-            -->
             <div class="text-center"><button class="btn btn-primary" onclick="submitActive()">Create image vectors</button></div>
         </div>
     </div>
@@ -121,9 +79,27 @@
         })
     })
 
+    let sliders = [];
+    let outputs = [];
+
+    $('.custom-range').each(function() {
+        let identifier = $(this).attr('id')
+        let output_identifier = $(`label[for="#${identifier}"] > span`).attr('id')
+        sliders.push(document.getElementById(identifier));
+        outputs.push(document.getElementById(output_identifier));
+
+        $('#' + identifier).on('input', function() {
+            $('#'+output_identifier).html(this.value)
+        })
+    })
+
     function submitActive(){
-        $('.active').each(() => {
+        $('.active').each(function() {
             let value = $(this).attr('id');
+            if (value == ''){
+                value = $(this).text();
+            }
+            console.log('Active', value)
             $('#activeElements').append(new Option(value, value, false, true))
         })
         $('#pipelineForm').submit();
