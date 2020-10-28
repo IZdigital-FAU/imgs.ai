@@ -12,7 +12,6 @@
     <div class="row">
         <ul class="list-group col-6">
             {% for embedder in embedders %}
-                <fieldset id="{{embedder}}_set">
                 <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder]['active'] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}_settings" id="{{embedder}}">{{embedder}}</li>
                 <div class="collapse multi-collapse" id="{{embedder}}_collapse">
                     <div class="card card-body">
@@ -20,8 +19,8 @@
                             <div class="col-5">
                                 {% if embedder == 'Raw' %}
                                     <div class="slidecontainer">
-                                        <label for="#resolution">Resolution <span class="badge badge-primary" id="resolution_number"></span></label>
-                                        <input type="range" min="32" max="512" value="" class="custom-range" id="resolution" name="resolution">
+                                        <label for="#{{embedder}}_resolution">Resolution <span class="badge badge-primary" id="{{embedder}}_resolution_number"></span></label>
+                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}_resolution" name="{{embedder}}_resolution">
                                     </div>
                                 {% else %}
                                     <div class="slidecontainer">
@@ -78,6 +77,7 @@
         })
     })
 
+    // Bind slider input events
     $('.custom-range').each(function() {
         let identifier = $(this).attr('id')
         let output_identifier = $(`label[for="#${identifier}"] > span`).attr('id')
@@ -86,22 +86,21 @@
         })
     })
 
+    // Fill form
     function submitActive(){
-        $('li.active').each(function() {
+        $('ul > li.active').each(function() {
             console.log($(this).text(), $(this).attr('id'))
             let embedder_settings = $($(this).attr('href')).find('div.col-5 input')
-
             embedder_settings.each(function(){
                 $(this).attr('form', 'pipelineForm')
             })
-
-            /*let input_identifier = ''
-            console.log('Input', input_identifier, (`label[for="#${input_identifier}"] > span`))
-
-            let value = $(this).attr('id');
-            $('#activeElements').append(new Option(value, value, false, true))*/
         })
-
+        $('div.col-7 > li.active').each(function() {
+            let reducer_settings = $($(this).attr('href')).find('input')
+            reducer_settings.each(function(){
+                $(this).attr('form', 'pipelineForm')
+            })
+        })
         $('#pipelineForm').submit();
     }
 </script>

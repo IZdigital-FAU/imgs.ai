@@ -264,4 +264,6 @@ def pipeline():
 
         make_model(model_folder=model_folder, embedders=selected_embedders, source=url_file)
 
+        # TODO: Pass input slider values + major clean-up
+
     return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

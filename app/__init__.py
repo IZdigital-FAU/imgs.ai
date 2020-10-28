@@ -9,6 +9,7 @@ from flask_cors import CORS
 from flask_bootstrap import Bootstrap
 from config import Config
 from model import EmbeddingModel
+from datetime import date
 
 
 # Start app
@@ -25,7 +26,7 @@ login_manager.login_view = "login"
 logging.captureWarnings(True)
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler("imgs.ai.log")
+file_handler = logging.FileHandler(f"logs/{date.today()}.log")
 console_handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(message)s")
 file_handler.setFormatter(formatter)
