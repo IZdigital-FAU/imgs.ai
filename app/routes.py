@@ -1,14 +1,14 @@
 from flask import render_template, flash, redirect, request, url_for, send_from_directory
 from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
-from app.forms import SignupForm, LoginForm, PipelineSelectionForm
+from app.forms import SignupForm, LoginForm, EmbedderForm
 from app import app, log, db, login_manager
 from app.user import User, create_user
 from app.session import Session
 from config import Config
 import time
 import os
-from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
+from embedders import EmbedderFactory, ReducerFactory
 from train import make_model
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -200,7 +200,7 @@ def pipeline():
 
     embedder_data = {}
 
-    form = PipelineSelectionForm()
+    form = EmbedderForm()
 
     # Init nested dict of active elements
     for embedder in embedders:
@@ -213,44 +213,34 @@ def pipeline():
                 embedder_data[embedder][reducer] = False
 
     if request.method == "POST":
+        embedder_factory = EmbedderFactory()
+        reducer_factory = ReducerFactory()
         print(request.form)
 
-        from embedders import Embedder_Poses, Embedder_VGG19, Embedder_Raw, Embedder_Face
-        selected_embedders = {}
-
-        for active in request.form.getlist("activeElements"):
-            if not active:
+        for key, value in request.form.items():
+            if key in ('csrf_token', 'projectName', 'urlPerLine'):
                 continue
-            
-            if '_' in active:
+
+            # Does not work for VGG19, bc no featureLength parameter
+            if ':' not in key: #includes setting
+                embedder, setting = key.split('.')
+                created = embedder_factory.create(embedder, {setting: int(value)})
+
+                if not created:
+                    embedder_factory.set_params(embedder, setting, int(value))
+
+            else: #includes reducer
+                embedder, reducer = key.split(':')
+                reducer = reducer.split('.')[0]
+                reducer_factory.create(reducer, {'n_components': int(value)})
+                embedder_factory.set_params(embedder, 'reducer', reducer_factory.reducers[reducer])
+
                 # Handle front-end active elements
-                embedder, reducer = active.split('_')
                 embedder_data[embedder]['active'] = True
                 embedder_data[embedder][reducer] = True
 
-                # Configure embedders here
-                if embedder == 'Raw':
-                    selected_embedders[embedder] = Embedder_Raw()
-                    selected_embedders[embedder].resolution = int(request.form['resolution'])
-                elif embedder == 'VGG19':
-                    selected_embedders[embedder] = Embedder_VGG19()
-                    selected_embedders[embedder].feature_length = int(request.form[f'{embedder}_featureLength'])
-                elif embedder == 'Face':
-                    selected_embedders[embedder] = Embedder_Face()
-                    selected_embedders[embedder].expected_people = int(request.form[f'{embedder}_expectedPeople'])
-                elif embedder == 'Poses':
-                    selected_embedders[embedder] = Embedder_Poses()
-                    selected_embedders[embedder].feature_length = int(request.form[f'{embedder}_featureLength'])
-                    selected_embedders[embedder].expected_people = int(request.form[f'{embedder}_expectedPeople'])
-                    selected_embedders[embedder].min_score = float(request.form[f'{embedder}_minScore'])
+        project_name = request.form['projectName']
 
-                if reducer == 'PCA':
-                    selected_embedders[embedder].reducer = PCA(n_components=int(request.form[f'{embedder}_{reducer}_dim']))
-                elif reducer == 'TSNE':
-                    selected_embedders[embedder].reducer = TSNE(n_components=int(request.form[f'{embedder}_{reducer}_dim']))
-
-
-        project_name = request.form['project_name']
         model_folder = os.path.join('/home/oleg/olegsModels', project_name)
 
         if not os.path.isdir(model_folder):
@@ -258,12 +248,10 @@ def pipeline():
 
         url_file = os.path.join(model_folder, project_name) + ".csv"
 
-        for img_url in request.form['url_per_line'].split():
+        for img_url in request.form['urlPerLine'].split():
             with open(url_file, 'a') as csv:
                 csv.write(f',{img_url}\n')
 
-        make_model(model_folder=model_folder, embedders=selected_embedders, source=url_file)
-
-        # TODO: Pass input slider values + major clean-up
+        make_model(model_folder=model_folder, embedders=embedder_factory.embedders, source=url_file)
 
     return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

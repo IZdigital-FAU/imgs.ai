@@ -5,9 +5,21 @@ import torch as t
 import torchvision as tv
 import torch.nn as nn
 import face_recognition
+from copy import deepcopy
+from collections import defaultdict
+from app import log
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 
-class Embedder_Raw:
+class Embedder:
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return self.__class__.__name__ + '(' + ', '.join([f'{key}={val}' for key, val in self.__dict__.items()]) + ')'
+
+class Embedder_Raw(Embedder):
 
     model = None
 
@@ -23,7 +35,7 @@ class Embedder_Raw:
         return output.astype(np.uint8).flatten()
 
 
-class Embedder_Face:
+class Embedder_Face(Embedder):
 
     feature_length = 128
     model = None
@@ -39,7 +51,7 @@ class Embedder_Face:
         return output.astype(np.float32).flatten()
 
 
-class Embedder_VGG19:
+class Embedder_VGG19(Embedder):
 
     feature_length = 4096
     model = None
@@ -130,3 +142,61 @@ class Embedder_Poses:
             keypoints = from_device(output[0]["keypoints"])
             normalized_keypoints = self._normalize_keypoints(keypoints, scores)
             return normalized_keypoints.astype(np.float32).flatten()
+
+
+
+class EmbedderFactory:
+    def __init__(self):
+        self.embedders = defaultdict()
+
+    def create(self, embedder, params):
+        if embedder in self.embedders:
+            log.warn('Embedder already created')
+            return False
+
+        if embedder.lower() == 'raw':
+            self.embedders[embedder] = Embedder_Raw(**params)
+        elif embedder.lower() == 'vgg19':
+            self.embedders[embedder] = Embedder_VGG19(**params)
+        elif embedder.lower() == 'face':
+            self.embedders[embedder] = Embedder_Face(**params)
+        elif embedder.lower() == 'poses':
+            self.embedders[embedder] = Embedder_Poses(**params)
+
+        return True
+
+    def set_params(self, embedder, param, value):
+        try:
+            setattr(self.embedders[embedder], param, value)
+        except KeyError as error:
+            log.warn(f'{error} => Create embedder first')
+
+    def get_embedders(self):
+        return deepcopy(self.embedders)
+
+
+
+class ReducerFactory:
+    def __init__(self):
+        self.reducers = defaultdict()
+
+    def create(self, reducer, params):
+        if reducer in self.reducers:
+            log.warn('Reducer already created')
+            return False
+
+        if reducer.lower() == 'pca':
+            self.reducers[reducer] = PCA(**params)
+        elif reducer.lower() == 'tsne':
+            self.reducers[reducer] = TSNE(**params)
+
+        return True
+
+    def set_params(self, reducer, param, value):
+        try:
+            setattr(self.reducers[reducer], param, value)
+        except KeyError as error:
+            log.warn(f'{error} => Create embedder first')
+
+    def get_embedders(self):
+        return deepcopy(self.reducers)

@@ -39,6 +39,7 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Log In", render_kw={"class": "btn btn-light"})
 
 
-class PipelineSelectionForm(FlaskForm):
-    project_name = StringField('ProjectName', validators=[DataRequired()])
-    url_per_line = TextAreaField('UrlPerLine')
+class EmbedderForm(FlaskForm):
+    projectName = StringField('Project name', validators=[DataRequired()])
+    urlPerLine = TextAreaField('Image url per line', validators=[DataRequired()])
+    submit = SubmitField("Create image vectors", render_kw={"class": "btn btn-primary", "onclick": "submitActive()"})

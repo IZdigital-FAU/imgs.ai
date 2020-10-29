@@ -3,9 +3,6 @@
 
 {% block content %}
 <div class="container jumbotron">
-
-    <form action="{{ url_for('pipeline') }}" id="pipelineForm" method="POST"></form>
-
     <select hidden multiple id="activeElements" name="activeElements"></select>
 
     <!-- Model selection -->
@@ -19,25 +16,26 @@
                             <div class="col-5">
                                 {% if embedder == 'Raw' %}
                                     <div class="slidecontainer">
-                                        <label for="#{{embedder}}_resolution">Resolution <span class="badge badge-primary" id="{{embedder}}_resolution_number"></span></label>
-                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}_resolution" name="{{embedder}}_resolution">
+                                        <label for="#{{embedder}}Resolution">Resolution <span class="badge badge-primary" id="{{embedder}}ResolutionNumber"></span></label>
+                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}Resolution" name="{{embedder}}.resolution">
                                     </div>
-                                {% else %}
+                                {% endif %}
+                                {% if embedder not in ('VGG19', 'Raw') %}
                                     <div class="slidecontainer">
-                                        <label for="#{{embedder}}_featureLength">Feature Length <span class="badge badge-primary" id="{{embedder}}_featureLength_number"></span></label>
-                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}_featureLength" name="{{embedder}}_featureLength">
+                                        <label for="#{{embedder}}FeatureLength">Feature Length <span class="badge badge-primary" id="{{embedder}}FeatureLengthNumber"></span></label>
+                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}FeatureLength" name="{{embedder}}.feature_length">
                                     </div>
                                 {% endif %}
                                 {% if embedder in ('Face', 'Poses') %}
                                     <div class="slidecontainer">
-                                        <label for="#{{embedder}}_expectedPeople">Expected no. of people <span class="badge badge-primary" id="{{embedder}}_expectedPeople_number"></span></label>
-                                        <input type="range" min="1" max="10" value="" class="custom-range" id="{{embedder}}_expectedPeople" name="{{embedder}}_expectedPeople">
+                                        <label for="#{{embedder}}ExpectedPeople">Expected no. of people <span class="badge badge-primary" id="{{embedder}}ExpectedPeople_number"></span></label>
+                                        <input type="range" min="1" max="10" value="" class="custom-range" id="{{embedder}}ExpectedPeople" name="{{embedder}}.expected_people">
                                     </div>
                                 {% endif %}
                                 {% if embedder == 'Poses' %}
                                     <div class="slidecontainer">
-                                        <label for="#minScore">Min. confidence score <span class="badge badge-primary" id="minscore_number"></span></label>
-                                        <input type="range" min="0" max="1" value="" class="custom-range" id="minScore" name="minScore">
+                                        <label for="#{{embedder}}MinScore">Min. confidence score <span class="badge badge-primary" id="{{embedder}}MinScoreNumber"></span></label>
+                                        <input type="range" min="0" max="1" value="" class="custom-range" id="{{embedder}}MinScore" name="{{embedder}}.min_score">
                                     </div>
                                 {% endif %}
                             </div>
@@ -45,12 +43,12 @@
                             <!-- Dimensionality Reduction -->
                             <div class="col-7">
                                 {% for reducer in reducers %}
-                                <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder][reducer] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}_{{reducer}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}_{{reducer}}_settings" id="{{embedder}}_{{reducer}}">{{reducer}}</li>
-                                <div class="collapse multi-collapse" id="{{embedder}}_{{reducer}}_collapse" role="list">
+                                <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder][reducer] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}{{reducer}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}-{{reducer}}_settings" id="{{embedder}}{{reducer}}_settings">{{reducer}}</li>
+                                <div class="collapse multi-collapse" id="{{embedder}}{{reducer}}_collapse" role="list">
                                     <div class="card card-body">
                                         <div class="slidecontainer">
-                                            <label for="#{{embedder}}_{{reducer}}_dim">Dimensionality <span class="badge badge-primary" id="{{embedder}}_{{reducer}}_dim_number"></span></label>
-                                            <input type="range" min="50" max="1000" value="" class="custom-range" id="{{embedder}}_{{reducer}}_dim" name="{{embedder}}_{{reducer}}_dim">
+                                            <label for="#{{embedder}}{{reducer}}Dim">Dimensionality <span class="badge badge-primary" id="{{embedder}}{{reducer}}DimNumber"></span></label>
+                                            <input type="range" min="50" max="1000" value="" class="custom-range" id="{{embedder}}{{reducer}}Dim" name="{{embedder}}:{{reducer}}.dim">
                                         </div>
                                     </div>
                                 </div>
@@ -62,8 +60,10 @@
             {% endfor %}
         </ul>
         <div class="col-6">
-            {{ render_form(form) }}
-            <div class="text-center"><button class="btn btn-primary" onclick="submitActive()">Create image vectors</button></div>
+            <form action="{{ url_for('pipeline') }}" id="pipelineForm" method="POST">
+                {{ render_form(form) }}
+            </form>
+            <!-- <div class="text-center"><button class="btn btn-primary" onclick="submitActive()">Create image vectors</button></div> -->
         </div>
     </div>
     <br>

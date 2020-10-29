@@ -8,5 +8,6 @@ Vagrantfile
 migrations/
 users.db
 *.log
+logs/*
 uploads/
 static/node_modules
