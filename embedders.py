@@ -13,9 +13,6 @@ from sklearn.manifold import TSNE
 
 
 class Embedder:
-    def __init__(self):
-        pass
-
     def __str__(self):
         return self.__class__.__name__ + '(' + ', '.join([f'{key}={val}' for key, val in self.__dict__.items()]) + ')'
 
@@ -146,57 +143,36 @@ class Embedder_Poses:
 
 
 class EmbedderFactory:
-    def __init__(self):
-        self.embedders = defaultdict()
-
     def create(self, embedder, params):
-        if embedder in self.embedders:
-            log.warn('Embedder already created')
-            return False
+        result = False
 
         if embedder.lower() == 'raw':
-            self.embedders[embedder] = Embedder_Raw(**params)
+            result = Embedder_Raw(**params)
         elif embedder.lower() == 'vgg19':
-            self.embedders[embedder] = Embedder_VGG19(**params)
+            result = Embedder_VGG19(**params)
         elif embedder.lower() == 'face':
-            self.embedders[embedder] = Embedder_Face(**params)
+            result = Embedder_Face(**params)
         elif embedder.lower() == 'poses':
-            self.embedders[embedder] = Embedder_Poses(**params)
+            result = Embedder_Poses(**params)
 
-        return True
+        return result
 
     def set_params(self, embedder, param, value):
-        try:
-            setattr(self.embedders[embedder], param, value)
-        except KeyError as error:
-            log.warn(f'{error} => Create embedder first')
-
-    def get_embedders(self):
-        return deepcopy(self.embedders)
+        setattr(embedder, param, value)
+        return embedder
 
 
 
 class ReducerFactory:
-    def __init__(self):
-        self.reducers = defaultdict()
-
     def create(self, reducer, params):
-        if reducer in self.reducers:
-            log.warn('Reducer already created')
-            return False
+        result = False
 
         if reducer.lower() == 'pca':
-            self.reducers[reducer] = PCA(**params)
+            result = PCA(**params)
         elif reducer.lower() == 'tsne':
-            self.reducers[reducer] = TSNE(**params)
+            result = TSNE(**params)
 
-        return True
+        return result
 
     def set_params(self, reducer, param, value):
-        try:
-            setattr(self.reducers[reducer], param, value)
-        except KeyError as error:
-            log.warn(f'{error} => Create embedder first')
-
-    def get_embedders(self):
-        return deepcopy(self.reducers)
+        setattr(reducer, param, value)

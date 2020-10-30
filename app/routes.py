@@ -8,7 +8,7 @@ from app.session import Session
 from config import Config
 import time
 import os
-from embedders import EmbedderFactory, ReducerFactory
+from embedders import EmbedderFactory, ReducerFactory, Embedder
 from train import make_model
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -199,48 +199,41 @@ def pipeline():
     reducers = ['PCA', 'TSNE']
 
     embedder_data = {}
-
     form = EmbedderForm()
+    
+    embedder_factory = EmbedderFactory()
+    reducer_factory = ReducerFactory()
 
-    # Init nested dict of active elements
     for embedder in embedders:
         if embedder not in embedder_data:
-            embedder_data[embedder] = {'active': False}
+            embedder_data[embedder] = {'data': embedder_factory.create(embedder, {}), 'active': False}
         for reducer in reducers:
-            if embedder not in embedder_data:
-                embedder_data[embedder] = {reducer: False}
-            else:
-                embedder_data[embedder][reducer] = False
+            embedder_data[embedder][reducer] = False
 
     if request.method == "POST":
-        embedder_factory = EmbedderFactory()
-        reducer_factory = ReducerFactory()
         print(request.form)
 
         for key, value in request.form.items():
-            if key in ('csrf_token', 'projectName', 'urlPerLine'):
+            if key in ('csrf_token', 'projectName', 'urlPerLine', 'submit'):
                 continue
 
             # Does not work for VGG19, bc no featureLength parameter
             if ':' not in key: #includes setting
                 embedder, setting = key.split('.')
-                created = embedder_factory.create(embedder, {setting: int(value)})
-
-                if not created:
-                    embedder_factory.set_params(embedder, setting, int(value))
+                embedder_factory.set_params(embedder_data[embedder]['data'], setting, int(value))
+                embedder_data[embedder]['active'] = True
 
             else: #includes reducer
                 embedder, reducer = key.split(':')
                 reducer = reducer.split('.')[0]
-                reducer_factory.create(reducer, {'n_components': int(value)})
-                embedder_factory.set_params(embedder, 'reducer', reducer_factory.reducers[reducer])
-
-                # Handle front-end active elements
-                embedder_data[embedder]['active'] = True
+                reducer_object = reducer_factory.create(reducer, {'n_components': int(value)})
+                embedder_factory.set_params(embedder_data[embedder]['data'], 'reducer', reducer_object)
                 embedder_data[embedder][reducer] = True
 
-        project_name = request.form['projectName']
+                # Handle front-end active elements
+                print(embedder_data[embedder])
 
+        project_name = request.form['projectName']
         model_folder = os.path.join('/home/oleg/olegsModels', project_name)
 
         if not os.path.isdir(model_folder):
@@ -252,6 +245,7 @@ def pipeline():
             with open(url_file, 'a') as csv:
                 csv.write(f',{img_url}\n')
 
-        make_model(model_folder=model_folder, embedders=embedder_factory.embedders, source=url_file)
+        make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_file)
 
+    print(embedder_data)
     return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

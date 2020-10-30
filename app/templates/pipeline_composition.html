@@ -3,8 +3,6 @@
 
 {% block content %}
 <div class="container jumbotron">
-    <select hidden multiple id="activeElements" name="activeElements"></select>
-
     <!-- Model selection -->
     <div class="row">
         <ul class="list-group col-6">
@@ -43,7 +41,7 @@
                             <!-- Dimensionality Reduction -->
                             <div class="col-7">
                                 {% for reducer in reducers %}
-                                <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder][reducer] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}{{reducer}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}-{{reducer}}_settings" id="{{embedder}}{{reducer}}_settings">{{reducer}}</li>
+                                <li class="list-group-item list-group-item-action {{ 'active' if embedders[embedder][reducer] }}" onclick="$(this).toggleClass('active')" data-toggle="collapse" href="#{{embedder}}{{reducer}}_collapse" role="checkbox" aria-expanded="false" aria-controls="{{embedder}}{{reducer}}_settings" id="{{embedder}}{{reducer}}_settings">{{reducer}}</li>
                                 <div class="collapse multi-collapse" id="{{embedder}}{{reducer}}_collapse" role="list">
                                     <div class="card card-body">
                                         <div class="slidecontainer">

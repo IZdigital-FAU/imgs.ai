@@ -20,10 +20,14 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
     device = set_cuda()
 
     # Allocate space
-    print("Allocating space")
+    log.info("Allocating space")
     embs = h5py.File(embs_file, "w")
     for emb_type, embedder in embedders.items():
-        data = np.zeros((len(X), embedder.feature_length))
+        if not embedder['active']:
+            continue
+        log.debug(embedder['data'].feature_length)
+        data = np.zeros((len(X), embedder['data'].feature_length))
+        log.debug(f'DATA: {data}')
         embs.create_dataset(emb_type, compression="lzf", data=data)
 
     # Set up threading
@@ -35,7 +39,7 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
 
     # Catch interruptions to be able to close file
     def signal_handler(sig, frame):
-        print("Shutting down gracefully...")
+        log.info("Shutting down gracefully...")
         embs.create_dataset("valid_idxs", compression="lzf", data=np.array(valid_idxs))
         embs.close()
         sys.exit(0)
@@ -61,7 +65,9 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
             if img:
                 with l:
                     for emb_type, embedder in embedders.items():
-                        embs[emb_type][i] = embedder.transform(img, device)
+                        if not embedder['active']:
+                            continue
+                        embs[emb_type][i] = embedder['data'].transform(img, device)
                     valid_idxs.append(i)
                     success = True
             with l:
@@ -101,7 +107,9 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     embs_file = os.path.join(model_folder, "embeddings.hdf5")
     if not os.path.isfile(embs_file):
         collect_embed(X, embedders, data_root, num_workers, embs_file)
+
     embs = h5py.File(embs_file, "r")
+    log.debug(embs_file, embs)
     valid_idxs = list(embs["valid_idxs"])
     config["embs_file"] = "embeddings.hdf5"
     config["model_len"] = len(valid_idxs)
@@ -114,21 +122,25 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     # Reduce if reducer given
     log.info(f'Applying dimensionality reduction')
     for emb_type, embedder in embedders.items():
+        if not embedder['active']:
+            continue
         data = embs[emb_type]
-        if embedder.reducer:
-            data = embedder.reducer.fit_transform(embs[emb_type])
+        if embedder['data'].reducer:
+            data = embedder['data'].reducer.fit_transform(embs[emb_type])
         cache.create_dataset(emb_type, data=data, compression="lzf")
 
     # Build and save neighborhoods
     log.info(f'Building neighborhoods')
     config["hood_files"] = {}
     for emb_type, embedder in embedders.items():
+        if not embedder['active']:
+            continue
         config["hood_files"][emb_type] = {}
         for metric in metrics:
-            if embedder.reducer:
-                dims = embedder.reducer.n_components
+            if embedder['data'].reducer:
+                dims = embedder['data'].reducer.n_components
             else:
-                dims = embedder.feature_length
+                dims = embedder['data'].feature_length
             ann = AnnoyIndex(dims, metric)
             for i, idx in enumerate(valid_idxs):
                 ann.add_item(i, cache[emb_type][idx])
@@ -149,7 +161,9 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     # Save fitted embedders
     log.info("Writing additional data")
     for emb_type, embedder in embedders.items():
-        embedder.model = None  # Delete models to save memory
+        if not embedder['active']:
+            continue
+        embedder['data'].model = None  # Delete models to save memory
     embedders_file = os.path.join(model_folder, "embedders.pickle")
     with open(embedders_file, "wb") as f:
         pickle.dump(embedders, f)
@@ -159,12 +173,14 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     config["dims"] = {}
     config["emb_types"] = []
     for emb_type, embedder in embedders.items():
+        if not embedder['active']:
+            continue
         config["dims"][emb_type] = {}
         config["emb_types"].append(emb_type)
-        if embedder.reducer:
-            dims = embedder.reducer.n_components
+        if embedder['data'].reducer:
+            dims = embedder['data'].reducer.n_components
         else:
-            dims = embedder.feature_length
+            dims = embedder['data'].feature_length
         config["dims"][emb_type] = dims
 
     # Save config
@@ -185,13 +201,13 @@ def arrange_data(X, shuffle=0, max_data=0):
     return X
 
 
-def make_model(model_folder, embedders, source, num_workers=64, shuffle=False, max_data=None):
+def make_model(model_folder, embedders, data_root, num_workers=64, shuffle=False, max_data=None):
     """Function creates models based on existing image data in the specified `model_folder`"""
     X = []
 
     log.info('Reading url data')
-    if source.endswith(".csv"):
-        with open(source, "r") as f:
+    if data_root.endswith(".csv"):
+        with open(data_root, "r") as f:
             meta = csv.reader(f)
             for row in meta:
                 fname = row[0]
@@ -208,16 +224,16 @@ def make_model(model_folder, embedders, source, num_workers=64, shuffle=False, m
             )
 
     else: # not csv
-        for root, dirs, files in os.walk(source):
+        for root, dirs, files in os.walk(data_root):
             for fname in files:
-                X.append([os.path.relpath(os.path.join(root, fname), start=source), "", None])
+                X.append([os.path.relpath(os.path.join(root, fname), start=data_root), "", None])
         
         X = arrange_data(X, shuffle, max_data)
 
         log.info('Start training')
         train(
             X=X,
-            data_root=source,
+            data_root=data_root,
             model_folder=model_folder,
             embedders=embedders,
             num_workers=num_workers,
