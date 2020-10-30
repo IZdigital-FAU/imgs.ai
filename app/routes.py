@@ -229,7 +229,6 @@ def pipeline():
                 reducer_object = reducer_factory.create(reducer, {'n_components': int(value)})
                 embedder_factory.set_params(embedder_data[embedder]['data'], 'reducer', reducer_object)
                 embedder_data[embedder][reducer] = True
-
                 # Handle front-end active elements
                 print(embedder_data[embedder])
 
