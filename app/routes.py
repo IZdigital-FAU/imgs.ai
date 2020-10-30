@@ -195,6 +195,7 @@ def interface():
 @app.route("/pipeline", methods=["GET", "POST"])
 @login_required
 def pipeline():
+    loading = False
     embedders = ['Raw', 'VGG19', 'Face', 'Poses']
     reducers = ['PCA', 'TSNE']
 
@@ -211,6 +212,7 @@ def pipeline():
             embedder_data[embedder][reducer] = False
 
     if request.method == "POST":
+        loading = True
         print(request.form)
 
         for key, value in request.form.items():
@@ -228,7 +230,7 @@ def pipeline():
                 reducer = reducer.split('.')[0]
                 reducer_object = reducer_factory.create(reducer, {'n_components': int(value)})
                 embedder_factory.set_params(embedder_data[embedder]['data'], 'reducer', reducer_object)
-                embedder_data[embedder][reducer] = True
+                embedder_data[embedder][reducer] = reducer_object
                 # Handle front-end active elements
                 print(embedder_data[embedder])
 
@@ -245,6 +247,7 @@ def pipeline():
                 csv.write(f',{img_url}\n')
 
         make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_file)
+        flash('Successfully created image vectors')
 
     print(embedder_data)
-    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)
+    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form, loading=loading)

@@ -15,25 +15,25 @@
                                 {% if embedder == 'Raw' %}
                                     <div class="slidecontainer">
                                         <label for="#{{embedder}}Resolution">Resolution <span class="badge badge-primary" id="{{embedder}}ResolutionNumber">{{ embedders[embedder]['data'].resolution }}</span></label>
-                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}Resolution" name="{{embedder}}.resolution">
+                                        <input type="range" min="32" max="512" value="{{ embedders[embedder]['data'].resolution }}" class="custom-range" id="{{embedder}}Resolution" name="{{embedder}}.resolution">
                                     </div>
                                 {% endif %}
                                 {% if embedder not in ('VGG19', 'Raw') %}
                                     <div class="slidecontainer">
                                         <label for="#{{embedder}}FeatureLength">Feature Length <span class="badge badge-primary" id="{{embedder}}FeatureLengthNumber">{{ embedders[embedder]['data'].feature_length }}</span></label>
-                                        <input type="range" min="32" max="512" value="" class="custom-range" id="{{embedder}}FeatureLength" name="{{embedder}}.feature_length">
+                                        <input type="range" min="32" max="512" value="{{ embedders[embedder]['data'].feature_length }}" class="custom-range" id="{{embedder}}FeatureLength" name="{{embedder}}.feature_length">
                                     </div>
                                 {% endif %}
                                 {% if embedder in ('Face', 'Poses') %}
                                     <div class="slidecontainer">
                                         <label for="#{{embedder}}ExpectedPeople">Expected no. of people <span class="badge badge-primary" id="{{embedder}}ExpectedPeople_number">{{ embedders[embedder]['data'].expected_people }}</span></label>
-                                        <input type="range" min="1" max="10" value="" class="custom-range" id="{{embedder}}ExpectedPeople" name="{{embedder}}.expected_people">
+                                        <input type="range" min="1" max="10" value="{{ embedders[embedder]['data'].expected_people }}" class="custom-range" id="{{embedder}}ExpectedPeople" name="{{embedder}}.expected_people">
                                     </div>
                                 {% endif %}
                                 {% if embedder == 'Poses' %}
                                     <div class="slidecontainer">
                                         <label for="#{{embedder}}MinScore">Min. confidence score <span class="badge badge-primary" id="{{embedder}}MinScoreNumber">{{ embedders[embedder]['data'].min_score }}</span></label>
-                                        <input type="range" min="0" max="1" value="" step=".1" class="custom-range" id="{{embedder}}MinScore" name="{{embedder}}.min_score">
+                                        <input type="range" min="0" max="1" value="{{ embedders[embedder]['data'].min_score }}" step=".1" class="custom-range" id="{{embedder}}MinScore" name="{{embedder}}.min_score">
                                     </div>
                                 {% endif %}
                             </div>
@@ -61,7 +61,6 @@
             <form action="{{ url_for('pipeline') }}" id="pipelineForm" method="POST">
                 {{ render_form(form) }}
             </form>
-            <!-- <div class="text-center"><button class="btn btn-primary" onclick="submitActive()">Create image vectors</button></div> -->
         </div>
     </div>
     <br>
