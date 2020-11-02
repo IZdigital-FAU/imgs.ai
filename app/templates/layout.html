@@ -17,20 +17,33 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:locale" content="en_US" />
 
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
 	<link rel="stylesheet" href="{{ url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css.css') }}">
 
 	<script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 
-	<title>{% block title %}{% endblock %}</title>
+	<title>imgs.ai</title>
 </head>
 
 <body>
-	{% extends "base.html" %}
 	{% include "navbar.html" %}
 	{% from "bootstrap/form.html" import render_form, render_field %}
-	{% block content %}{% endblock %}
+		<div style="display:block; top:50%; right:50%; position:fixed; z-index: 999" class="spinner-border text-primary mx-auto" role="status" id="loading"></div>
+	
+	<div style="opacity: .3" class="wrapper">{% block content %}{% endblock %}</div>
 </body>
+
+<script>
+	$(window).on('load', function(){
+		$(".wrapper").animate({
+			opacity: 1
+		});
+		$('#loading').hide()
+	})
+</script>
 
 </html>
