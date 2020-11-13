@@ -13,7 +13,7 @@ class Config(object):
     # https://stackoverflow.com/questions/33738467/how-do-i-know-if-i-can-disable-sqlalchemy-track-modifications
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADS_PATH = f"/home/{username}/imgs.ai/uploads"  # Absolute
-    MODELS_PATH = f"/home/{username}/models/models"  # Absolute
+    MODELS_PATH = f"/home/{username}/olegsModels"  # Absolute
     MODELS = [f.name for f in os.scandir(MODELS_PATH) if f.is_dir()]
     NS = ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100"]
     DEFAULT_N = "30"

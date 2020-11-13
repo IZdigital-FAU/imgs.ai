@@ -213,14 +213,15 @@ def pipeline():
 
     if request.method == "POST":
         loading = True
-        print(request.form)
+        log.debug(request.form)
 
         for key, value in request.form.items():
-            if key in ('csrf_token', 'projectName', 'urlPerLine', 'submit'):
+            if key in ('csrf_token', 'projectName', 'urlPerLineFile', 'submit'):
                 continue
 
             # Does not work for VGG19, bc no featureLength parameter
             if ':' not in key: #includes setting
+                log.debug(key)
                 embedder, setting = key.split('.')
                 embedder_factory.set_params(embedder_data[embedder]['data'], setting, int(value))
                 embedder_data[embedder]['active'] = True
@@ -240,14 +241,13 @@ def pipeline():
         if not os.path.isdir(model_folder):
             os.mkdir(model_folder)
 
-        url_file = os.path.join(model_folder, project_name) + ".csv"
-
-        for img_url in request.form['urlPerLine'].split():
-            with open(url_file, 'a') as csv:
-                csv.write(f',{img_url}\n')
-
-        make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_file)
+        # Handle url file
+        url_fpath = os.path.join(model_folder, project_name) + ".csv"
+        log.debug(request.files)
+        url_file = request.files['urlPerLineFile']
+        url_file.save(url_fpath)
+        
+        make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_fpath)
         flash('Successfully created image vectors')
 
-    print(embedder_data)
     return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form, loading=loading)

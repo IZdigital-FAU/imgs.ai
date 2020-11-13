@@ -209,7 +209,9 @@ def make_model(model_folder, embedders, data_root, num_workers=64, shuffle=False
     if data_root.endswith(".csv"):
         with open(data_root, "r") as f:
             meta = csv.reader(f)
+            log.debug(meta)
             for row in meta:
+                if len(row) == 1: X.append(row); continue
                 fname = row[0]
                 url = row[1]
                 X.append([fname, url] + [field for field in row[2:]])

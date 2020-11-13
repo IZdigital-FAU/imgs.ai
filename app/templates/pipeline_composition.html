@@ -2,6 +2,10 @@
 {% block title %}Build your own pipeline{{title}}{% endblock %}
 
 {% block content %}
+{% for message in messages %}
+      <li>{{ message }}</li>
+{% endfor %}
+
 <div class="container jumbotron">
     <!-- Model selection -->
     <div class="row">
@@ -58,7 +62,7 @@
             {% endfor %}
         </ul>
         <div class="col-6">
-            <form action="{{ url_for('pipeline') }}" id="pipelineForm" method="POST">
+            <form action="{{ url_for('pipeline') }}" id="pipelineForm" method="POST" enctype="multipart/form-data">
                 {{ render_form(form) }}
             </form>
         </div>
@@ -99,6 +103,11 @@
             })
         })
         $('#pipelineForm').submit();
+
+        $(".wrapper").animate({
+			opacity: .3
+		});
+        $('#loading').show()
     }
 </script>
 {% endblock %}

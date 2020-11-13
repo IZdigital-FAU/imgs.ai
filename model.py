@@ -26,10 +26,13 @@ class EmbeddingModel:
             for idx, row in enumerate(csv.reader(f)):
                 self.metadata[str(idx)] = []
                 self.paths[str(idx)] = row[0]
-                self.sources[str(idx)] = row[1]
-                for col in row[2:]:
-                    if col:
-                        self.metadata[str(idx)].append(col)
+
+                if len(row) == 1: self.sources[str(idx)] = row[0]
+                else:
+                    self.sources[str(idx)] = row[1]
+                    for col in row[2:]:
+                        if col:
+                            self.metadata[str(idx)].append(col)
 
     def __len__(self):
         return self.config["model_len"]

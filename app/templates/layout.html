@@ -31,6 +31,12 @@
 
 <body>
 	{% include "navbar.html" %}
+	{% for message in get_flashed_messages() %}
+	<div class="alert alert-success">
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+		{{ message }}
+	</div>
+	{% endfor %}
 	{% from "bootstrap/form.html" import render_form, render_field %}
 		<div style="display:block; top:50%; right:50%; position:fixed; z-index: 999" class="spinner-border text-primary mx-auto" role="status" id="loading"></div>
 	
