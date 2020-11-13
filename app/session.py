@@ -99,7 +99,11 @@ class Session:
                 mode=self.mode,
             )
         else:
-            idxs = sample_range(self.model_len, int(self.n))
+            k = int(self.n)
+            if k > self.model_len:
+                idxs = sample_range(self.model_len, self.model_len)
+            else:
+                idxs = sample_range(self.model_len, k)
             self.res_idxs = [str(idx) for idx in idxs]  # Indices are strings
 
     def render_nns(self):

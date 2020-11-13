@@ -28,7 +28,7 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
         log.debug(embedder['data'].feature_length)
         data = np.zeros((len(X), embedder['data'].feature_length))
         log.debug(f'DATA: {data}')
-        embs.create_dataset(emb_type, compression="lzf", data=data)
+        embs.create_dataset(emb_type.lower(), compression="lzf", data=data)
 
     # Set up threading
     pbar_success = tqdm(total=len(X), desc="Embedded")
@@ -67,7 +67,7 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
                     for emb_type, embedder in embedders.items():
                         if not embedder['active']:
                             continue
-                        embs[emb_type][i] = embedder['data'].transform(img, device)
+                        embs[emb_type.lower()][i] = embedder['data'].transform(img, device)
                     valid_idxs.append(i)
                     success = True
             with l:
@@ -124,10 +124,10 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     for emb_type, embedder in embedders.items():
         if not embedder['active']:
             continue
-        data = embs[emb_type]
+        data = embs[emb_type.lower()]
         if embedder['data'].reducer:
-            data = embedder['data'].reducer.fit_transform(embs[emb_type])
-        cache.create_dataset(emb_type, data=data, compression="lzf")
+            data = embedder['data'].reducer.fit_transform(embs[emb_type.lower()])
+        cache.create_dataset(emb_type.lower(), data=data, compression="lzf")
 
     # Build and save neighborhoods
     log.info(f'Building neighborhoods')
@@ -135,7 +135,7 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     for emb_type, embedder in embedders.items():
         if not embedder['active']:
             continue
-        config["hood_files"][emb_type] = {}
+        config["hood_files"][emb_type.lower()] = {}
         for metric in metrics:
             if embedder['data'].reducer:
                 dims = embedder['data'].reducer.n_components
@@ -143,11 +143,11 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
                 dims = embedder['data'].feature_length
             ann = AnnoyIndex(dims, metric)
             for i, idx in enumerate(valid_idxs):
-                ann.add_item(i, cache[emb_type][idx])
+                ann.add_item(i, cache[emb_type.lower()][idx])
             ann.build(n_trees)
-            hood_file = os.path.join(model_folder, f"{emb_type}_{metric}.ann")
+            hood_file = os.path.join(model_folder, f"{emb_type.lower()}_{metric}.ann")
             ann.save(hood_file)
-            config["hood_files"][emb_type][metric] = f"{emb_type}_{metric}.ann"
+            config["hood_files"][emb_type.lower()][metric] = f"{emb_type.lower()}_{metric}.ann"
 
     # Align and write metadata
     log.info(f'Aligning metadata')
@@ -175,13 +175,14 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     for emb_type, embedder in embedders.items():
         if not embedder['active']:
             continue
-        config["dims"][emb_type] = {}
-        config["emb_types"].append(emb_type)
+        print('EMBEDDING_TYPE', emb_type.lower())
+        config["dims"][emb_type.lower()] = {}
+        config["emb_types"].append(emb_type.lower())
         if embedder['data'].reducer:
             dims = embedder['data'].reducer.n_components
         else:
             dims = embedder['data'].feature_length
-        config["dims"][emb_type] = dims
+        config["dims"][emb_type.lower()] = dims
 
     # Save config
     config_file = os.path.join(model_folder, "config.json")

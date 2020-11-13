@@ -219,7 +219,6 @@ def pipeline():
             if key in ('csrf_token', 'projectName', 'urlPerLineFile', 'submit'):
                 continue
 
-            # Does not work for VGG19, bc no featureLength parameter
             if ':' not in key: #includes setting
                 log.debug(key)
                 embedder, setting = key.split('.')
@@ -249,5 +248,7 @@ def pipeline():
         
         make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_fpath)
         flash('Successfully created image vectors')
+        
+        session = Session(flask_session)
 
     return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form, loading=loading)

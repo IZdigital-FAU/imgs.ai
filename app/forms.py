@@ -42,5 +42,5 @@ class LoginForm(FlaskForm):
 class EmbedderForm(FlaskForm):
     projectName = StringField('Project name', validators=[DataRequired()])
     # urlPerLine = TextAreaField('Image url per line', validators=[DataRequired()])
-    urlPerLineFile = FileField('Image url per line (file)', render_kw={'accept': '.csv,.txt'})
+    urlPerLineFile = FileField('Image url per line (file)', validators=[DataRequired()], render_kw={'accept': '.csv,.txt'})
     submit = SubmitField("Create image vectors", render_kw={"class": "btn btn-primary", "onclick": "submitActive()"})
