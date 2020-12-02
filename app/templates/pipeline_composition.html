@@ -22,7 +22,7 @@
                                         <input type="range" min="32" max="512" value="{{ embedders[embedder]['data'].resolution }}" class="custom-range" id="{{embedder}}Resolution" name="{{embedder}}.resolution">
                                     </div>
                                 {% endif %}
-                                {% if embedder != 'Raw' %}
+                                {% if embedder not in  ('Raw', 'Poses') %}
                                     <div class="slidecontainer">
                                         <label for="#{{embedder}}FeatureLength">Feature Length <span class="badge badge-primary" id="{{embedder}}FeatureLengthNumber">{{ embedders[embedder]['data'].feature_length }}</span></label>
                                         <input type="range" min="32" max="4096" step="32" value="{{ embedders[embedder]['data'].feature_length }}" class="custom-range" id="{{embedder}}FeatureLength" name="{{embedder}}.feature_length">

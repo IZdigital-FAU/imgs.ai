@@ -27,7 +27,7 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
             continue
         log.debug(embedder['data'].feature_length)
         data = np.zeros((len(X), embedder['data'].feature_length))
-        log.debug(f'DATA: {data}')
+        log.debug(f'DATA: {data.shape}')
         embs.create_dataset(emb_type.lower(), compression="lzf", data=data)
 
     # Set up threading

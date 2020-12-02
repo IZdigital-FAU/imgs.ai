@@ -1,8 +1,9 @@
-from flask import render_template, flash, redirect, request, url_for, send_from_directory
+from flask import render_template, flash, redirect, request, url_for, send_from_directory, get_flashed_messages
 from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
 from app.forms import SignupForm, LoginForm, EmbedderForm
-from app import app, log, db, login_manager
+from app import app, log, db, login_manager, models
+from model import EmbeddingModel
 from app.user import User, create_user
 from app.session import Session
 from config import Config
@@ -36,18 +37,14 @@ def signup():
     if form.validate_on_submit():
         existing_user = User.query.filter_by(email=form.email.data).first()
         if existing_user:
-            flash("User name already exists; please choose another one.")
+            flash("User name already exists; please choose another one.", 'warning')
         else:
             user = create_user(form)
             if user.access:
                 login_user(user)  # Log in as newly created user
                 return redirect(f"{url_for('interface')}")
-            flash(
-                "Thank you for requesting beta access, you will hear from us in the next 24 hours."
-            )
-    return render_template(
-        "signup.html", title="imgs.ai - Sign up for alpha", form=form
-    )
+            flash("Thank you for requesting beta access, you will hear from us in the next 24 hours.", 'info')
+    return render_template("signup.html", title="imgs.ai - Sign up for alpha", form=form)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -199,6 +196,9 @@ def pipeline():
     embedders = ['Raw', 'VGG19', 'Face', 'Poses']
     reducers = ['PCA', 'TSNE']
 
+    # Load from cookie
+    session = Session(flask_session)
+
     embedder_data = {}
     form = EmbedderForm()
     
@@ -212,27 +212,7 @@ def pipeline():
             embedder_data[embedder][reducer] = False
 
     if request.method == "POST":
-        loading = True
         log.debug(request.form)
-
-        for key, value in request.form.items():
-            if key in ('csrf_token', 'projectName', 'urlPerLineFile', 'submit'):
-                continue
-
-            if ':' not in key: #includes setting
-                log.debug(key)
-                embedder, setting = key.split('.')
-                embedder_factory.set_params(embedder_data[embedder]['data'], setting, int(value))
-                embedder_data[embedder]['active'] = True
-
-            else: #includes reducer
-                embedder, reducer = key.split(':')
-                reducer = reducer.split('.')[0]
-                reducer_object = reducer_factory.create(reducer, {'n_components': int(value)})
-                embedder_factory.set_params(embedder_data[embedder]['data'], 'reducer', reducer_object)
-                embedder_data[embedder][reducer] = reducer_object
-                # Handle front-end active elements
-                print(embedder_data[embedder])
 
         project_name = request.form['projectName']
         model_folder = os.path.join('/home/oleg/olegsModels', project_name)
@@ -245,10 +225,46 @@ def pipeline():
         log.debug(request.files)
         url_file = request.files['urlPerLineFile']
         url_file.save(url_fpath)
-        
-        make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_fpath)
-        flash('Successfully created image vectors')
-        
-        session = Session(flask_session)
+        url_file.close()
 
-    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form, loading=loading)
+        for key, value in request.form.items():
+            if key in ('csrf_token', 'projectName', 'urlPerLineFile', 'submit'):
+                continue
+
+            if ':' not in key: #includes setting
+                log.debug(key)
+                embedder, setting = key.split('.')
+                if setting.endswith('min_score'):
+                    digitize = lambda s: float(s)
+                else:
+                    digitize = lambda s: int(s)
+                embedder_factory.set_params(embedder_data[embedder]['data'], setting, digitize(value))
+                embedder_data[embedder]['active'] = True
+
+            else: #includes reducer
+                embedder, reducer = key.split(':')
+                reducer = reducer.split('.')[0]
+
+                n_samples = len(open(url_fpath).read().split('\n')) - 1
+                if n_samples < int(value):
+                    value = n_samples
+
+                reducer_object = reducer_factory.create(reducer, {'n_components': int(value)})
+                embedder_factory.set_params(embedder_data[embedder]['data'], 'reducer', reducer_object)
+                embedder_data[embedder][reducer] = reducer_object
+                # Handle front-end active elements
+                print(embedder_data[embedder])
+        
+        try:
+            make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_fpath)
+        except KeyError as error:
+            flash(error, 'danger')
+            return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)
+
+        models[project_name] = EmbeddingModel()
+        models[project_name].load(model_folder)
+        session.load_model(project_name)
+
+        flash('Successfully created image vectors', 'success')
+
+    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

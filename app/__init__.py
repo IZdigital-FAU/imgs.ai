@@ -21,6 +21,7 @@ Bootstrap(app)  # Bootstrap
 CORS(app)  # CORS
 login_manager = LoginManager(app)  # Login
 login_manager.login_view = "login"
+login_manager.login_message_category = "warning"
 
 # Logging
 logging.captureWarnings(True)
@@ -42,6 +43,8 @@ migrate = Migrate(app, db)
 models = {}
 for model in Config.MODELS:
     models[model] = EmbeddingModel()
-    models[model].load(os.path.join(Config.MODELS_PATH, model))
+    MODEL_PATH = os.path.join(Config.MODELS_PATH, model)
+    if os.path.isfile(os.path.join(MODEL_PATH, 'config.json')):
+        models[model].load(MODEL_PATH)
 
 from app import user, routes

@@ -65,8 +65,7 @@ class Session:
         self.pos_idxs = []
         self.neg_idxs = []
 
-        if files:
-            self.extend(files)
+        if files: self.extend(files)
         
     def load_model_params(self):
         self.model_len = models[self.model].config["model_len"]

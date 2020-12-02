@@ -11,19 +11,43 @@ import csv
 
 
 class EmbeddingModel:
-    def load(self, model_folder):
-        
-        # Load configuration
-        with open(os.path.join(model_folder, "config.json"), "r") as f:
-            self.config = json.load(f)
-        self.model_folder = model_folder
 
+    def __init__(self):
+        self.model_folder = None
         # Load metadata
         self.metadata = {}
         self.paths = {}
         self.sources = {}
-        with open(os.path.join(self.model_folder, self.config["meta_file"])) as f:
-            for idx, row in enumerate(csv.reader(f)):
+        self.config = {
+                'data_root': None,
+                'metrics': [],
+                'embs_file': None,
+                'model_len': None,
+                'hood_files': {},
+                'meta_file': None,
+                'embedders_file': None,
+                'dims': {},
+                'emb_types': []
+            }
+
+        # self.config['hood_files'] = {embedder:{metric:f'{embedder}_{metric}.ann' for metric in self.config['metrics']} for embedder in self.config['emb_types']}
+
+
+    def __len__(self):
+        return self.config["model_len"]
+
+
+    def load(self, model_folder):
+        
+        self.model_folder = model_folder
+
+        # Load configuration
+        CONFIG_FPATH = os.path.join(model_folder, "config.json")
+        with open(CONFIG_FPATH, "r") as config:
+            self.config = json.load(config)
+
+        with open(os.path.join(self.model_folder, self.config["meta_file"])) as meta_file:
+            for idx, row in enumerate(csv.reader(meta_file)):
                 self.metadata[str(idx)] = []
                 self.paths[str(idx)] = row[0]
 
@@ -33,9 +57,6 @@ class EmbeddingModel:
                     for col in row[2:]:
                         if col:
                             self.metadata[str(idx)].append(col)
-
-    def __len__(self):
-        return self.config["model_len"]
 
     def extend(self, files):
         # Load uploads file
@@ -153,21 +174,33 @@ class EmbeddingModel:
         # Allocate space
         embs = {}
         for emb_type, embedder in embedders.items():
-            embs[emb_type] = np.zeros((len(paths), embedder.feature_length))
+            print('IM AN EMBEDDER!', embedder)
+            if isinstance(embedder, dict):
+                embs[emb_type] = np.zeros((len(paths), embedder['data'].feature_length))
+            else:
+                embs[emb_type] = np.zeros((len(paths), embedder.feature_length))
 
         # Extract embeddings
         for i, path in enumerate(paths):
             for emb_type, embedder in embedders.items():
-                embs[emb_type][i] = embedder.transform(load_img(path), device)
+                if isinstance(embedder, dict):
+                    embs[emb_type][i] = embedder['data'].transform(load_img(path), device)
+                else:
+                    embs[emb_type][i] = embedder.transform(load_img(path), device)
 
         # Delete models to save memory
         for emb_type, embedder in embedders.items():
-            embedder.model = None  # Delete models to save memory
+            if isinstance(embedder, dict):
+                embedder['data'].model = None  # Delete models to save memory
+            else:
+                embedder.model = None  # Delete models to save memory
 
         # Reduce if reducer given
         for emb_type, embedder in embedders.items():
-            if embedder.reducer:
-                embs[emb_type] = embedder.reducer.transform(embs[emb_type])
+            if isinstance(embedder, dict):
+                if embedder['data'].reducer: embs[emb_type] = embedder['data'].reducer.transform(embs[emb_type])
+            else:
+                if embedder.reducer: embs[emb_type] = embedder.reducer.transform(embs[emb_type])
 
         # Unload embedders file
         f.close()

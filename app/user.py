@@ -5,7 +5,6 @@ from app import db
 from config import Config
 
 
-# https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-iv-database
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True)
@@ -13,7 +12,6 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     access = db.Column(db.Boolean())
 
-    # https://hackersandslackers.com/flask-login-user-authentication/
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="sha256")
 

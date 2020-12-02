@@ -98,18 +98,11 @@ class Embedder_Poses:
             score = scores[person].item()
             if self.min_score is None or score > self.min_score:
                 # Scale w.r.t exact bounding box
-                min_x = min(
-                    [person_keypoint[0] for person_keypoint in person_keypoints]
-                )
-                max_x = max(
-                    [person_keypoint[0] for person_keypoint in person_keypoints]
-                )
-                min_y = min(
-                    [person_keypoint[1] for person_keypoint in person_keypoints]
-                )
-                max_y = max(
-                    [person_keypoint[1] for person_keypoint in person_keypoints]
-                )
+                min_x = min([person_keypoint[0] for person_keypoint in person_keypoints])
+                max_x = max([person_keypoint[0] for person_keypoint in person_keypoints])
+                min_y = min([person_keypoint[1] for person_keypoint in person_keypoints])
+                max_y = max([person_keypoint[1] for person_keypoint in person_keypoints])
+
                 person_keypoints_scaled = []
                 for person_keypoint in person_keypoints:
                     if max_x > min_x > 0 and max_y > min_y > 0:  # Failsafe
@@ -126,9 +119,7 @@ class Embedder_Poses:
     def transform(self, img, device="cpu"):
         if self.model is None:
             # Construct model only on demand
-            self.model = tv.models.detection.keypointrcnn_resnet50_fpn(
-                pretrained=True
-            ).to(device)
+            self.model = tv.models.detection.keypointrcnn_resnet50_fpn(pretrained=True).to(device)
             self.model = self.model
             self.model.eval()
             self.transforms = tv.transforms.Compose([tv.transforms.ToTensor()])
@@ -160,7 +151,6 @@ class EmbedderFactory:
     def set_params(self, embedder, param, value):
         setattr(embedder, param, value)
         return embedder
-
 
 
 class ReducerFactory:
