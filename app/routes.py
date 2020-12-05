@@ -261,6 +261,7 @@ def pipeline():
             flash(error, 'danger')
             return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)
 
+        Config.MODELS.append(project_name)
         models[project_name] = EmbeddingModel()
         models[project_name].load(model_folder)
         session.load_model(project_name)
