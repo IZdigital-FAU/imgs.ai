@@ -256,7 +256,11 @@ def pipeline():
                 print(embedder_data[embedder])
         
         try:
-            make_model(model_folder=model_folder, embedders=embedder_data, data_root=url_fpath)
+            make_model(
+                model_folder=model_folder,
+                embedders={emb_type:embedder for emb_type, embedder in embedder_data.items() if embedder['active']},
+                data_location=url_fpath
+            )
         except KeyError as error:
             flash(error, 'danger')
             return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

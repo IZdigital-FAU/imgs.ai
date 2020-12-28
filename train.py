@@ -1,7 +1,8 @@
-from util import new_dir, set_cuda, image_from_url, load_img
+from util import new_dir, set_cuda, image_from_url, load_img, get_img_paths, arrange_data, read_csv
 import h5py
 from model import EmbeddingModel
 from tqdm import tqdm
+from os.path import isfile, join
 import os
 import csv
 from threading import Lock, Thread
@@ -16,23 +17,21 @@ from annoy import AnnoyIndex
 from app import log
 
 
-def collect_embed(X, embedders, data_root, num_workers, embs_file):
+def run_embedders(img_locations, embedders, num_workers, embs_file):
     device = set_cuda()
 
     # Allocate space
     log.info("Allocating space")
     embs = h5py.File(embs_file, "w")
     for emb_type, embedder in embedders.items():
-        if not embedder['active']:
-            continue
         log.debug(embedder['data'].feature_length)
-        data = np.zeros((len(X), embedder['data'].feature_length))
+        data = np.zeros((len(img_locations), embedder['data'].feature_length))
         log.debug(f'DATA: {data.shape}')
         embs.create_dataset(emb_type.lower(), compression="lzf", data=data)
 
     # Set up threading
-    pbar_success = tqdm(total=len(X), desc="Embedded")
-    pbar_failure = tqdm(total=len(X), desc="Failed")
+    pbar_success = tqdm(total=len(img_locations), desc="Embedded")
+    pbar_failure = tqdm(total=len(img_locations), desc="Failed")
     q = Queue()
     l = Lock()
     valid_idxs = []
@@ -59,14 +58,12 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
                 if path.startswith("http"):
                     img = image_from_url(path)
                 else:
-                    img = load_img(os.path.join(data_root, path))
+                    img = load_img(img_locations[i])
             except:
                 img = None
             if img:
                 with l:
                     for emb_type, embedder in embedders.items():
-                        if not embedder['active']:
-                            continue
                         embs[emb_type.lower()][i] = embedder['data'].transform(img, device)
                     valid_idxs.append(i)
                     success = True
@@ -82,7 +79,7 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
         t.daemon = True
         t.start()
 
-    for i, x in enumerate(X):
+    for i, x in enumerate(img_locations):
         q.put((i, x))
 
     # Cleanup
@@ -93,20 +90,19 @@ def collect_embed(X, embedders, data_root, num_workers, embs_file):
     embs.close()
 
 
-def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular", "euclidean", "manhattan"], n_trees=10):
+def train(data_location, img_locations, model_folder, embedders, num_workers, distance_metrics=["angular", "euclidean", "manhattan"], n_trees=10):
     log.info(f'Checking {model_folder}')
     new_dir(model_folder)
 
     # Set up
     log.info(f'Setting up config')
     config = {}
-    config["data_root"] = data_root
-    config["metrics"] = metrics
+    config["data_location"] = data_location
+    config["distance_metrics"] = distance_metrics
 
     # Create or load raw embeddings
-    embs_file = os.path.join(model_folder, "embeddings.hdf5")
-    if not os.path.isfile(embs_file):
-        collect_embed(X, embedders, data_root, num_workers, embs_file)
+    embs_file = join(model_folder, "embeddings.hdf5")
+    if not isfile(embs_file): run_embedders(img_locations, embedders, num_workers, embs_file)
 
     embs = h5py.File(embs_file, "r")
     log.debug(embs_file, embs)
@@ -116,14 +112,12 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
 
     # Allocate cache
     log.info(f'Allocating cache')
-    cache_file = os.path.join(model_folder, "cache.hdf5")
+    cache_file = join(model_folder, "cache.hdf5")
     cache = h5py.File(cache_file, "w")
 
     # Reduce if reducer given
     log.info(f'Applying dimensionality reduction')
     for emb_type, embedder in embedders.items():
-        if not embedder['active']:
-            continue
         data = embs[emb_type.lower()]
         if embedder['data'].reducer:
             data = embedder['data'].reducer.fit_transform(embs[emb_type.lower()])
@@ -133,10 +127,8 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     log.info(f'Building neighborhoods')
     config["hood_files"] = {}
     for emb_type, embedder in embedders.items():
-        if not embedder['active']:
-            continue
         config["hood_files"][emb_type.lower()] = {}
-        for metric in metrics:
+        for metric in distance_metrics:
             if embedder['data'].reducer:
                 dims = embedder['data'].reducer.n_components
             else:
@@ -145,7 +137,7 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
             for i, idx in enumerate(valid_idxs):
                 ann.add_item(i, cache[emb_type.lower()][idx])
             ann.build(n_trees)
-            hood_file = os.path.join(model_folder, f"{emb_type.lower()}_{metric}.ann")
+            hood_file = join(model_folder, f"{emb_type.lower()}_{metric}.ann")
             ann.save(hood_file)
             config["hood_files"][emb_type.lower()][metric] = f"{emb_type.lower()}_{metric}.ann"
 
@@ -153,18 +145,16 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     log.info(f'Aligning metadata')
     meta = []
     for idx in valid_idxs:
-        meta.append(X[idx])
-    meta_file = os.path.join(model_folder, "metadata.csv")
+        meta.append(img_locations[idx])
+    meta_file = join(model_folder, "metadata.csv")
     csv.writer(open(meta_file, "w")).writerows(meta)
     config["meta_file"] = "metadata.csv"
 
     # Save fitted embedders
     log.info("Writing additional data")
     for emb_type, embedder in embedders.items():
-        if not embedder['active']:
-            continue
         embedder['data'].model = None  # Delete models to save memory
-    embedders_file = os.path.join(model_folder, "embedders.pickle")
+    embedders_file = join(model_folder, "embedders.pickle")
     with open(embedders_file, "wb") as f:
         pickle.dump(embedders, f)
     config["embedders_file"] = "embedders.pickle"
@@ -173,8 +163,6 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     config["dims"] = {}
     config["emb_types"] = []
     for emb_type, embedder in embedders.items():
-        if not embedder['active']:
-            continue
         print('EMBEDDING_TYPE', emb_type.lower())
         config["dims"][emb_type.lower()] = {}
         config["emb_types"].append(emb_type.lower())
@@ -185,7 +173,7 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
         config["dims"][emb_type.lower()] = dims
 
     # Save config
-    config_file = os.path.join(model_folder, "config.json")
+    config_file = join(model_folder, "config.json")
     with open(config_file, "w") as f:
         json.dump(config, f)
 
@@ -195,51 +183,20 @@ def train(X, model_folder, embedders, data_root, num_workers, metrics=["angular"
     os.remove(cache_file)
 
 
-def arrange_data(X, shuffle=0, max_data=0):
-    log.info('Arrange data')
-    if shuffle: random.shuffle(X)
-    if max_data: X = X[:max_data]
-    return X
-
-
-def make_model(model_folder, embedders, data_root, num_workers=64, shuffle=False, max_data=None):
+def make_model(model_folder, embedders, data_location, num_workers=64, shuffle=False, max_data=None):
     """Function creates models based on existing image data in the specified `model_folder`"""
-    X = []
+    img_locations = []
 
-    log.info('Reading url data')
-    if data_root.endswith(".csv"):
-        with open(data_root, "r") as f:
-            meta = csv.reader(f)
-            log.debug(meta)
-            for row in meta:
-                if len(row) == 1: X.append(row); continue
-                fname = row[0]
-                url = row[1]
-                X.append([fname, url] + [field for field in row[2:]])
-        
-        X = arrange_data(X, shuffle, max_data)
+    if data_location.endswith(".csv"):
+        log.info('Reading url metadata')
+        img_locations = read_csv(data_location)
+    else:
+        log.info('Reading local img file paths')
+        img_locations = get_img_paths(data_location)
 
-        log.info('Start training')
-        train(X=X, data_root=None,
-                model_folder=model_folder,
-                embedders=embedders,
-                num_workers=num_workers
-            )
+    img_locations = arrange_data(img_locations, shuffle, max_data)
 
-    else: # not csv
-        for root, dirs, files in os.walk(data_root):
-            for fname in files:
-                X.append([os.path.relpath(os.path.join(root, fname), start=data_root), "", None])
-        
-        X = arrange_data(X, shuffle, max_data)
-
-        log.info('Start training')
-        train(
-            X=X,
-            data_root=data_root,
-            model_folder=model_folder,
-            embedders=embedders,
-            num_workers=num_workers,
-        )
+    log.info('Start image embedding process')
+    train(data_location, img_locations, model_folder, embedders, num_workers)
 
     log.info('Done')

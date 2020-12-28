@@ -4,13 +4,14 @@ import torch as t
 from uuid import uuid4
 import os
 from math import ceil
-from random import sample
+from random import sample, shuffle
 import h5py
 from io import BytesIO
 import requests
 import time
 import pybase64
 from functools import lru_cache
+import csv
 
 
 @lru_cache(maxsize=100)  # Cache up to 100 images
@@ -26,9 +27,8 @@ def fast_base64img(path, load_urls=False):
         return ""
     out = BytesIO()
     img.save(out, "jpeg")
-    img_str = "data:image/jpeg;base64, " + pybase64.b64encode(out.getvalue()).decode(
-        "utf-8"
-    )
+    img_str = "data:image/jpeg;base64, " + pybase64.b64encode(out.getvalue()).decode("utf-8")
+
     return img_str
 
 
@@ -90,3 +90,33 @@ def new_dir(folder):
 def set_cuda():
     device = "cuda" if t.cuda.is_available() else "cpu"
     return device
+
+
+def arrange_data(X, shuffle=0, max_data=0):
+    # log.info('Arrange data')
+    if shuffle: shuffle(X)
+    if max_data: X = X[:max_data]
+    return X
+
+
+def read_csv(fpath):
+    img_metadata = []
+    with open(fpath) as csv_file:
+        data_table = csv.reader(csv_file)
+        for row in data_table:
+            if len(row) == 1: img_metadata.append(row); continue
+            # else:
+            fname = row[0]
+            url = row[1]
+            img_metadata.append([fname, url] + [field for field in row[2:]])
+    
+    return img_metadata
+
+
+def get_img_paths(folder):
+    image_data = []
+    for root, dirs, files in os.walk(folder):
+        for fname in files:
+            image_data.append([os.path.abspath(os.path.join(root, fname)), "", None])
+    
+    return image_data

@@ -60,7 +60,7 @@ class Session:
         self.model = model
         self.load_model_params()
         self.emb_type = self.emb_types[0]
-        self.metric = self.metrics[0]
+        self.metric = self.distance_metrics[0]
         self.res_idxs = []
         self.pos_idxs = []
         self.neg_idxs = []
@@ -70,7 +70,7 @@ class Session:
     def load_model_params(self):
         self.model_len = models[self.model].config["model_len"]
         self.emb_types = models[self.model].config["emb_types"]
-        self.metrics = models[self.model].config["metrics"]
+        self.distance_metrics = models[self.model].config["distance_metrics"]
 
         # Hack to always show VGG19 embeddings first, independent of model config file
         if "vgg19" in self.emb_types:
@@ -78,9 +78,9 @@ class Session:
             self.emb_types.insert(0, self.emb_types.pop(idx))
 
         # Hack to always show manhattan distance first, independent of model config file
-        if "manhattan" in self.metrics:
-            idx = self.metrics.index("manhattan")
-            self.metrics.insert(0, self.metrics.pop(idx))
+        if "manhattan" in self.distance_metrics:
+            idx = self.distance_metrics.index("manhattan")
+            self.distance_metrics.insert(0, self.distance_metrics.pop(idx))
 
     def extend(self, files):
         self.pos_idxs += models[self.model].extend(files)
@@ -129,7 +129,7 @@ class Session:
             if path.startswith("http"):
                 root = ""
             else:
-                root = models[self.model].config["data_root"]
+                root = models[self.model].config["data_location"]
             source = models[self.model].sources[idx]
             metadata = models[self.model].metadata[idx]
         return root, path, source, metadata

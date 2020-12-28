@@ -6,21 +6,13 @@
 		{{ nav_link('interface', 'Interface') }}
 		{{ nav_link('pipeline', 'Embedder') }}
 		{{ nav_link('settings', 'Settings') }}
-		<!-- <a class="nav-item nav-link" href="/">About</a>
-		<a class="nav-item nav-link" href="{{ url_for('interface') }}">Interface</a>
-		<a class="nav-item nav-link" href="{{ url_for('pipeline') }}">Pipeline Composer</a>
-		<a class="nav-item nav-link" href="{{ url_for('settings') }}">Settings</a>
-		<a class="nav-item nav-link" href="{{ url_for('help') }}">Help</a> -->
 		{% if not current_user.is_anonymous and current_user.id==1%}
 			{{ nav_link('users', 'User Management') }}
-			<!-- <a class="nav-item nav-link" href="{{ url_for('users') }}">User Management</a> -->
 		{% endif %}
 		{% if current_user.is_anonymous %}
 			{{ nav_link('login', 'Login') }}
-			<!-- <a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a> -->
 		{% else %}
 			{{ nav_link('logout', 'Logout') }}
-			<!-- <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a> -->
 			<a class="nav-item nav-link" href="https://docs.google.com/document/d/1qGMsi2W8YBXowaEs0aeH5EdZk_JRQgqgpE1VRX0pto0/edit?usp=sharing">BETA: Report Bug</a>
 		{% endif %}
 	</ul>

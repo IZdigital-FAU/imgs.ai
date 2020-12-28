@@ -81,7 +81,7 @@
 				<div class="form-group mr-2">
 					<label class="mt-2 mb-2 mr-2">Distance</label>
 					<select class="custom-select mt-2 mb-2 mr-2" name="metric" onchange="this.form.submit()" form="actions">
-						{% for metric in session.metrics %}
+						{% for metric in session.distance_metrics %}
 						<option {{ "selected" if session.metric==metric }} value="{{ metric }}">{{ metric }}</option>
 						{% endfor %}
 					</select>
