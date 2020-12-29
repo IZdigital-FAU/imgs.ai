@@ -49,18 +49,18 @@ def run_embedders(img_locations, embedders, num_workers, embs_file):
     def _worker():
         while True:
             try:
-                i, x = q.get(timeout=5)
+                i, path = q.get(timeout=5)
             except Empty:
                 break
-            path = x[0]
+
             success = False
-            try:
-                if path.startswith("http"):
-                    img = image_from_url(path)
-                else:
-                    img = load_img(img_locations[i])
-            except:
-                img = None
+            img = None
+
+            if path.startswith("http"):
+                img = image_from_url(path)
+            else:
+                img = load_img(img_locations[i])
+
             if img:
                 with l:
                     for emb_type, embedder in embedders.items():
@@ -68,10 +68,8 @@ def run_embedders(img_locations, embedders, num_workers, embs_file):
                     valid_idxs.append(i)
                     success = True
             with l:
-                if success:
-                    pbar_success.update(1)
-                else:
-                    pbar_failure.update(1)
+                if success: pbar_success.update(1)
+                else: pbar_failure.update(1)
             q.task_done()
 
     for i in range(num_workers):
@@ -79,8 +77,8 @@ def run_embedders(img_locations, embedders, num_workers, embs_file):
         t.daemon = True
         t.start()
 
-    for i, x in enumerate(img_locations):
-        q.put((i, x))
+    for i, path in enumerate(img_locations):
+        q.put((i, path))
 
     # Cleanup
     q.join()
@@ -99,13 +97,15 @@ def train(data_location, img_locations, model_folder, embedders, num_workers, di
     config = {}
     config["data_location"] = data_location
     config["distance_metrics"] = distance_metrics
+    config["dims"] = {}
+    config["emb_types"] = []
 
     # Create or load raw embeddings
     embs_file = join(model_folder, "embeddings.hdf5")
-    if not isfile(embs_file): run_embedders(img_locations, embedders, num_workers, embs_file)
+    if not isfile(embs_file):
+        run_embedders(img_locations, embedders, num_workers, embs_file)
 
-    embs = h5py.File(embs_file, "r")
-    log.debug(embs_file, embs)
+    embs = h5py.File(embs_file)
     valid_idxs = list(embs["valid_idxs"])
     config["embs_file"] = "embeddings.hdf5"
     config["model_len"] = len(valid_idxs)
@@ -128,11 +128,16 @@ def train(data_location, img_locations, model_folder, embedders, num_workers, di
     config["hood_files"] = {}
     for emb_type, embedder in embedders.items():
         config["hood_files"][emb_type.lower()] = {}
+        config["dims"][emb_type.lower()] = {}
+        config["emb_types"].append(emb_type.lower())
+
+        if embedder['data'].reducer:
+            dims = embedder['data'].reducer.n_components
+        else: dims = embedder['data'].feature_length
+
+        config["dims"][emb_type.lower()] = dims
+
         for metric in distance_metrics:
-            if embedder['data'].reducer:
-                dims = embedder['data'].reducer.n_components
-            else:
-                dims = embedder['data'].feature_length
             ann = AnnoyIndex(dims, metric)
             for i, idx in enumerate(valid_idxs):
                 ann.add_item(i, cache[emb_type.lower()][idx])
@@ -145,7 +150,7 @@ def train(data_location, img_locations, model_folder, embedders, num_workers, di
     log.info(f'Aligning metadata')
     meta = []
     for idx in valid_idxs:
-        meta.append(img_locations[idx])
+        meta.append([img_locations[idx]])
     meta_file = join(model_folder, "metadata.csv")
     csv.writer(open(meta_file, "w")).writerows(meta)
     config["meta_file"] = "metadata.csv"
@@ -158,19 +163,6 @@ def train(data_location, img_locations, model_folder, embedders, num_workers, di
     with open(embedders_file, "wb") as f:
         pickle.dump(embedders, f)
     config["embedders_file"] = "embedders.pickle"
-
-    # More config
-    config["dims"] = {}
-    config["emb_types"] = []
-    for emb_type, embedder in embedders.items():
-        print('EMBEDDING_TYPE', emb_type.lower())
-        config["dims"][emb_type.lower()] = {}
-        config["emb_types"].append(emb_type.lower())
-        if embedder['data'].reducer:
-            dims = embedder['data'].reducer.n_components
-        else:
-            dims = embedder['data'].feature_length
-        config["dims"][emb_type.lower()] = dims
 
     # Save config
     config_file = join(model_folder, "config.json")
@@ -189,12 +181,14 @@ def make_model(model_folder, embedders, data_location, num_workers=64, shuffle=F
 
     if data_location.endswith(".csv"):
         log.info('Reading url metadata')
-        img_locations = read_csv(data_location)
+        img_locations, _sources, _metadata = read_csv(data_location)
     else:
         log.info('Reading local img file paths')
         img_locations = get_img_paths(data_location)
 
     img_locations = arrange_data(img_locations, shuffle, max_data)
+
+    print('img_locations', img_locations)
 
     log.info('Start image embedding process')
     train(data_location, img_locations, model_folder, embedders, num_workers)

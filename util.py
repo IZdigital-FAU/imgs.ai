@@ -66,7 +66,7 @@ def upload_imgs_to(files, folder):
     return paths, idxs
 
 
-def sample_range(n, k):
+def sample_range(n, k) -> list:
     return sample(list(range(n)), k=k)
 
 
@@ -74,7 +74,7 @@ def load_img(path):
     return PIL.Image.open(path).convert("RGB")
 
 
-def sort_dict(d):
+def sort_dict(d) -> dict:
     return {k: v for k, v in sorted(d.items(), key=lambda item: item[1])}
 
 
@@ -92,31 +92,46 @@ def set_cuda():
     return device
 
 
-def arrange_data(X, shuffle=0, max_data=0):
+def arrange_data(X, shuffle=0, max_data=0) -> list:
     # log.info('Arrange data')
     if shuffle: shuffle(X)
     if max_data: X = X[:max_data]
     return X
 
 
-def read_csv(fpath):
-    img_metadata = []
+def list2dict(l) -> dict:
+    return {str(i):elm for i, elm in enumerate(l)}
+
+def read_csv(fpath, to_dict=0):
+    paths = []
+    sources = []
+    metadata = []
+
     with open(fpath) as csv_file:
         data_table = csv.reader(csv_file)
         for row in data_table:
-            if len(row) == 1: img_metadata.append(row); continue
+            paths.append(row[0])
+
+            if len(row) == 1:
+                sources.append(row[0])
+                metadata.append([])
+                continue
             # else:
-            fname = row[0]
-            url = row[1]
-            img_metadata.append([fname, url] + [field for field in row[2:]])
-    
-    return img_metadata
+            sources.append(row[1])
+            metadata.append(row[2:])
+
+    if to_dict:
+        metadata = list2dict(metadata)
+        paths = list2dict(paths)
+        sources = list2dict(sources)
+
+    return paths, sources, metadata
 
 
-def get_img_paths(folder):
-    image_data = []
+def get_img_paths(folder) -> list:
+    img_paths = []
     for root, dirs, files in os.walk(folder):
         for fname in files:
-            image_data.append([os.path.abspath(os.path.join(root, fname)), "", None])
+            img_paths.append([os.path.abspath(os.path.join(root, fname)), "", None])
     
-    return image_data
+    return img_paths

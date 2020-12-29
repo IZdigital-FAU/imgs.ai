@@ -215,7 +215,7 @@ def pipeline():
         log.debug(request.form)
 
         project_name = request.form['projectName']
-        model_folder = os.path.join('/home/oleg/olegsModels', project_name)
+        model_folder = os.path.join('/home/oleg/olegsModels/models', project_name)
 
         if not os.path.isdir(model_folder):
             os.mkdir(model_folder)

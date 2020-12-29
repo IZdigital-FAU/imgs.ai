@@ -1,4 +1,4 @@
-from util import set_cuda, load_img, sort_dict, upload_imgs_to
+from util import set_cuda, load_img, sort_dict, upload_imgs_to, read_csv
 import numpy as np
 import PIL.Image
 import os
@@ -19,15 +19,9 @@ class EmbeddingModel:
         self.paths = {}
         self.sources = {}
         self.config = {
-                'data_location': None,
-                'distance_metrics': [],
-                'embs_file': None,
-                'model_len': None,
-                'hood_files': {},
-                'meta_file': None,
-                'embedders_file': None,
-                'dims': {},
-                'emb_types': []
+            'data_location': None, 'distance_metrics': [], 'embs_file': None,
+            'model_len': None, 'hood_files': {}, 'meta_file': None,
+            'embedders_file': None, 'dims': {}, 'emb_types': []
         }
 
     def __len__(self):
@@ -43,17 +37,7 @@ class EmbeddingModel:
         with open(CONFIG_FPATH) as config:
             self.config = json.load(config)
 
-        with open(os.path.join(self.model_folder, self.config["meta_file"])) as meta_file:
-            for idx, row in enumerate(csv.reader(meta_file)):
-                self.metadata[str(idx)] = []
-                self.paths[str(idx)] = row[0]
-
-                if len(row) == 1: self.sources[str(idx)] = row[0]
-                else:
-                    self.sources[str(idx)] = row[1]
-                    for col in row[2:]:
-                        if col:
-                            self.metadata[str(idx)].append(col)
+        self.paths, self.sources, self.metadata = read_csv(os.path.join(self.model_folder, self.config["meta_file"]), to_dict=1)
 
 
     def extend(self, files):
@@ -87,7 +71,6 @@ class EmbeddingModel:
         def vectors_from_idxs(idxs):
             vectors = []
             for idx in idxs:
-                print('INDEX', idx)
                 # Index for upload has UUID4 format to make it unique across models
                 if idx.startswith("upload"):
                     vectors.append(uploads[idx][emb_type])
@@ -115,6 +98,10 @@ class EmbeddingModel:
             for vector in neg_vectors:
                 neg_sum += vector
             centroid -= neg_sum
+
+            # pos_centroid = pos_vectors.mean(axis=0)
+            # neg_centroid = neg_vectors.mean(axis=0)
+            # query_vector = pos_centroid - neg_centroid
 
             nns = ann.get_nns_by_vector(centroid, n, search_k=search_k, include_distances=False)
 
@@ -149,6 +136,7 @@ class EmbeddingModel:
         nns = nns[:n]  # Limit to n
 
         return nns
+
 
     def transform(self, paths):
         device = set_cuda()
