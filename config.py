@@ -10,7 +10,6 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = (
         f"sqlite:////home/{username}/models/users.db"  # Absolute
     )
-    # https://stackoverflow.com/questions/33738467/how-do-i-know-if-i-can-disable-sqlalchemy-track-modifications
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADS_PATH = f"/home/{username}/imgs.ai/uploads"  # Absolute
     MODELS_PATH = f"/home/{username}/olegsModels/models"  # Absolute

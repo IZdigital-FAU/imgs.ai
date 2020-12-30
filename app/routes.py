@@ -10,7 +10,7 @@ from config import Config
 import time
 import os
 from embedders import EmbedderFactory, ReducerFactory, Embedder
-from train import make_model
+from train import EmbeddingCreator
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
@@ -61,7 +61,7 @@ def login():
                 return redirect(url_for("interface"))
             flash("Access not granted yet!")
         else:
-            flash("Invalid username/password combination")
+            flash("Invalid username/password combination", 'danger')
         return redirect(url_for("login"))
     return render_template("login.html", title="Log in", form=form)
 
@@ -89,9 +89,7 @@ def logout():
 @login_required
 def settings():
     session = Session(flask_session)
-    return render_template(
-        "settings.html", title="imgs.ai", session=session, Config=Config
-    )
+    return render_template("settings.html", title="imgs.ai", session=session, Config=Config)
 
 
 @app.route("/cdn/<idx>")
@@ -192,7 +190,6 @@ def interface():
 @app.route("/pipeline", methods=["GET", "POST"])
 @login_required
 def pipeline():
-    loading = False
     embedders = ['Raw', 'VGG19', 'Face', 'Poses']
     reducers = ['PCA', 'TSNE']
 
@@ -215,7 +212,7 @@ def pipeline():
         log.debug(request.form)
 
         project_name = request.form['projectName']
-        model_folder = os.path.join('/home/oleg/olegsModels/models', project_name)
+        model_folder = os.path.join(Config.MODELS_PATH, project_name)
 
         if not os.path.isdir(model_folder):
             os.mkdir(model_folder)
@@ -255,15 +252,18 @@ def pipeline():
                 # Handle front-end active elements
                 print(embedder_data[embedder])
         
-        try:
-            make_model(
-                model_folder=model_folder,
-                embedders={emb_type:embedder for emb_type, embedder in embedder_data.items() if embedder['active']},
-                data_location=url_fpath
-            )
-        except KeyError as error:
-            flash(error, 'danger')
-            return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)
+
+        embedding_creator = EmbeddingCreator(
+            model_folder=model_folder,
+            embedders={emb_type:embedder for emb_type, embedder in embedder_data.items() if embedder['active']},
+            data_location=url_fpath
+        )
+        
+        embedding_creator.train(n_trees=10)
+
+        # except KeyError as error:
+        #     flash(error, 'danger')
+        #     return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)
 
         Config.MODELS.append(project_name)
         models[project_name] = EmbeddingModel()
