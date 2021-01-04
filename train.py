@@ -178,16 +178,18 @@ class EmbeddingCreator:
             img = image_from_url(img_url)
 
             with lock:
-                for emb_type, embedder in self.embedders.items():
-                    self.emb_store[emb_type.lower()][i] = embedder['data'].transform(img, self.device)
-
-                valid_idxs.append(i)
-                success = True
-            
-                pbar_success.update(1) if success else pbar_failure.update(1)
+                if img:
+                    valid_idxs.append(i)
+                    pbar_success.update(1)
+                
+                    for emb_type, embedder in self.embedders.items():
+                        self.emb_store[emb_type.lower()][i] = embedder['data'].transform(img, self.device)
+    
+                else: pbar_failure.update(1)
 
 
         with ThreadPoolExecutor(self.num_workers) as executor:
+            log.debug(f'Multithreading on {executor._max_workers} workers')
             executor.map(_worker, enumerate(self.img_locations))
 
         # Cleanup
