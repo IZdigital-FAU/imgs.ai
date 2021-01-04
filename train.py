@@ -5,8 +5,8 @@ from tqdm import tqdm
 from os.path import isfile, join
 import os
 import csv
-from threading import Lock, Thread
-from queue import Queue, Empty
+from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
 import pickle
 import json
 import signal
@@ -40,6 +40,10 @@ class ModelMetadata:
     def __init__(self):
         self.rows = []
 
+    def build(self, valid_idxs, img_locations):
+        for idx in valid_idxs:
+            self.rows.append([img_locations[idx]])
+
     def save(self, path):
         csv.writer(open(path, "w")).writerows(self.rows)
 
@@ -51,16 +55,16 @@ class EmbeddingCreator:
         
         self.embedders = embedders
         self.emb_store = {}
-        self.embs_file = None
 
         self.model_folder = model_folder
-        self.data_location = data_location
-        self.img_locations = []
         
         log.info(f'Checking {self.model_folder}')
         new_dir(self.model_folder)
 
         self.num_workers = num_workers
+
+        self.data_location = data_location
+        self.img_locations = []
 
         if data_location.endswith(".csv"):
             log.info('Reading url metadata')
@@ -70,24 +74,28 @@ class EmbeddingCreator:
             self.img_locations = get_img_paths(data_location)
 
         self.img_locations = arrange_data(self.img_locations, shuffle, max_data)
+        self.n_imgs = len(self.img_locations)
 
         log.info(f'Setting up config')
         self.config = ModelConfig()
         self.config.data_location = self.data_location
 
-        self.embs_file = join(self.model_folder, "embeddings.hdf5")
+        self.embs_file = join(self.model_folder, self.config.embs_file)
+
+        self.fresh = 0
 
         if not isfile(self.embs_file):
+            self.fresh = 1
             log.info("Creating embedding store + allocating space")
             self.emb_store = h5py.File(self.embs_file, "w")
 
             for emb_type, embedder in self.embedders.items():
-                data = np.zeros((len(self.img_locations), embedder['data'].feature_length))
+                data = np.zeros((self.n_imgs, embedder['data'].feature_length))
                 self.emb_store.create_dataset(emb_type.lower(), compression="lzf", data=data)
 
 
     def train(self, n_trees):
-        self.tqdm_wrap()
+        if self.fresh: self.tqdm_wrap()
 
         self.emb_store = h5py.File(self.embs_file) # read embedding store
         valid_idxs = list(self.emb_store["valid_idxs"])
@@ -124,25 +132,19 @@ class EmbeddingCreator:
                 for i, idx in enumerate(valid_idxs):
                     ann.add_item(i, cache[emb_type.lower()][idx])
                 ann.build(n_trees)
-                hood_file = join(self.model_folder, f"{emb_type.lower()}_{metric}.ann")
+
+                hood_fname = f"{emb_type.lower()}_{metric}.ann"
+                hood_file = join(self.model_folder, hood_fname)
                 ann.save(hood_file)
-                self.config.hood_files[emb_type.lower()][metric] = f"{emb_type.lower()}_{metric}.ann"
+                self.config.hood_files[emb_type.lower()][metric] = hood_fname
 
         # Align and write metadata
         log.info(f'Aligning metadata')
         metadata = ModelMetadata()
-        for idx in valid_idxs:
-            metadata.rows.append([self.img_locations[idx]])
+        metadata.build(valid_idxs, self.img_locations)
         metadata.save(join(self.model_folder, "metadata.csv"))
 
-        # Save fitted embedders
-        log.info("Writing additional data")
-        for emb_type, embedder in self.embedders.items():
-            embedder['data'].model = None  # Delete models to save memory
-        embedders_file = join(self.model_folder, "embedders.pickle")
-        with open(embedders_file, "wb") as f:
-            pickle.dump(self.embedders, f)
-        self.config.embedders_file = "embedders.pickle"
+        self.serialize_embedders()
 
         # Save config
         self.config.save(join(self.model_folder, "config.json"))
@@ -155,10 +157,10 @@ class EmbeddingCreator:
 
     def tqdm_wrap(self):
         # Set up threading
-        pbar_success = tqdm(total=len(self.img_locations), desc="Embedded")
-        pbar_failure = tqdm(total=len(self.img_locations), desc="Failed")
-        q = Queue()
-        l = Lock()
+        pbar_success = tqdm(total=self.n_imgs, desc="Embedded")
+        pbar_failure = tqdm(total=self.n_imgs, desc="Failed")
+
+        lock = Lock()
         valid_idxs = []
 
         # Catch interruptions to be able to close file
@@ -170,43 +172,37 @@ class EmbeddingCreator:
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        # Define and start queue
-        def _worker():
-            while True:
-                try:
-                    i, path = q.get(timeout=5)
-                except Empty:
-                    break
+        # img I/O multithreading
+        def _worker(item):
+            i, img_url = item
+            img = image_from_url(img_url)
 
-                success = False
-                img = None
+            with lock:
+                for emb_type, embedder in self.embedders.items():
+                    self.emb_store[emb_type.lower()][i] = embedder['data'].transform(img, self.device)
 
-                img = image_from_url(path) if path.startswith('http') else load_img(self.img_locations[i])
+                valid_idxs.append(i)
+                success = True
+            
+                pbar_success.update(1) if success else pbar_failure.update(1)
 
-                if img:
-                    with l:
-                        log.info('Start image embedding process')
-                        for emb_type, embedder in self.embedders.items():
-                            self.emb_store[emb_type.lower()][i] = embedder['data'].transform(img, self.device)
 
-                        valid_idxs.append(i)
-                        success = True
-                with l:
-                    pbar_success.update(1) if success else pbar_failure.update(1)
-
-                q.task_done()
-
-        for i in range(self.num_workers):
-            t = Thread(target=_worker)
-            t.daemon = True
-            t.start()
-
-        for i, path in enumerate(self.img_locations):
-            q.put((i, path))
+        with ThreadPoolExecutor(self.num_workers) as executor:
+            executor.map(_worker, enumerate(self.img_locations))
 
         # Cleanup
-        q.join()
         pbar_success.close()
         pbar_failure.close()
         self.emb_store.create_dataset("valid_idxs", compression="lzf", data=np.array(valid_idxs))
         self.emb_store.close()
+
+
+    def serialize_embedders(self):
+        # Save fitted embedders
+        log.info("Writing additional data")
+        for embedder in self.embedders.values():
+            embedder['data'].model = None  # Delete pretrained pytorch models to save memory
+
+        embedders_file = join(self.model_folder, self.config.embedders_file)
+        with open(embedders_file, "wb") as f:
+            pickle.dump(self.embedders, f)
