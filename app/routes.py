@@ -187,6 +187,20 @@ def interface():
     )
 
 
+@app.route('/api/images')
+@login_required
+def get_imgs():
+    session = Session(flask_session)
+    session.get_nns()
+    popovers, links, images = session.render_nns()
+
+    return links
+
+@app.route('/test')
+def test():
+    return render_template('test.html')
+
+
 @app.route("/pipeline", methods=["GET", "POST"])
 @login_required
 def pipeline():
