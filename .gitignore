@@ -10,4 +10,4 @@ users.db
 *.log
 logs/*
 uploads/
-static/node_modules
+node_modules

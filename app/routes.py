@@ -194,7 +194,7 @@ def get_imgs():
     session.get_nns()
     popovers, links, images = session.render_nns()
 
-    return links
+    return images
 
 @app.route('/test')
 def test():
