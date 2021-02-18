@@ -4,7 +4,7 @@
   "description": "imgs.ai is a fast, dataset-agnostic, deep visual search engine for digital art history based on neural network embeddings. Its main feature is the concept of \"re-search\": results from a search can immediately form the basis of another search. This allows the intuitive exploration of an image corpus, while results are continuously refined.",
   "main": "imgs.ai.js",
   "scripts": {
-    "build": "webpack --progress"
+    "build": "webpack --progress --stats-error-details true"
   },
   "repository": {
     "type": "git",

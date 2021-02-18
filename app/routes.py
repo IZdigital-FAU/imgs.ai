@@ -188,24 +188,36 @@ def interface():
     )
 
 
-@app.route('/api/images')
+@app.route('/api/images', methods=["GET", "POST"])
 @login_required
-def get_imgs():
+def fetch_imgs():
     """
     if no params => random images\n
     else => query images
     """
 
     session = Session(flask_session)
+
+    if request.method == "POST":
+        data = request.get_json()
+        print('DATA', data)
+
+        session.n = data['n']
+
+        session.emb_type = data["embedder"]
+        session.metric = data["distance"]
+        session.mode = data["order"]
+
+        session.pos_idxs = data['posIdxs']
+        session.neg_idxs = data['negIdxs']
+
     session.get_nns()
     popovers, links, images = session.render_nns()
 
     data = [{'id': idx, 'url': url} for idx, url in images.items()]
-    print(data)
-
-    import json
 
     return {'data': data}
+
 
 @app.route('/test')
 def test():
