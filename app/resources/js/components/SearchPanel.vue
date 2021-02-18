@@ -45,11 +45,6 @@
             </b-form-group>
 
         </b-form-group>
-
-        <b-button-group v-if="this.$parent.selected_imgs.length > 0">
-            <b-button variant="success">Positive</b-button>
-            <b-button variant="danger">Negative</b-button>
-        </b-button-group>
     </div>
 </template>
 

@@ -1,4 +1,5 @@
 from flask import render_template, flash, redirect, request, url_for, send_from_directory, get_flashed_messages
+from flask import Response
 from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
 from app.forms import SignupForm, LoginForm, EmbedderForm
@@ -190,11 +191,21 @@ def interface():
 @app.route('/api/images')
 @login_required
 def get_imgs():
+    """
+    if no params => random images\n
+    else => query images
+    """
+
     session = Session(flask_session)
     session.get_nns()
     popovers, links, images = session.render_nns()
 
-    return images
+    data = [{'id': idx, 'url': url} for idx, url in images.items()]
+    print(data)
+
+    import json
+
+    return {'data': data}
 
 @app.route('/test')
 def test():
