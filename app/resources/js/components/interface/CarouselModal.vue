@@ -25,9 +25,11 @@
 <script>
 export default {
     name: 'SearchPanel',
+    props: {
+        slide: Number
+    },
 
     data : () => ({
-        slide: 0,
         sliding: null
     }),
 

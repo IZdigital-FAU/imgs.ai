@@ -6,7 +6,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 import '../css/css.css'
 
-import App from './App.vue'
+import Embedder from './components/Embedder.vue'
 
 // Make BootstrapVue available throughout your project
 Vue.use(BootstrapVue)
@@ -16,5 +16,5 @@ Vue.use(IconsPlugin)
 
 new Vue({
     el: '#app',
-    render: h => h(App),
+    render: h => h(Embedder),
 })

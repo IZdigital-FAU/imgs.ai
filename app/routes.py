@@ -193,25 +193,28 @@ def interface():
 def fetch_imgs():
     session = Session(flask_session)
 
+    print('session dict', session.__dict__)
+
     if request.method == "POST":
         data = request.get_json()
         print('DATA', data)
 
+        session.model = data['model']
         session.n = data['n']
 
-        session.emb_type = data["embedder"]
-        session.metric = data["distance"]
-        session.mode = data["order"]
+        session.emb_type = data["emb_type"]
+        session.metric = data["metric"]
+        session.mode = data["mode"]
 
-        session.pos_idxs = data['posIdxs']
-        session.neg_idxs = data['negIdxs']
+        session.pos_idxs = data['pos_idxs']
+        session.neg_idxs = data['neg_idxs']
 
     session.get_nns()
     popovers, links, images = session.render_nns()
 
     data = [{'id': idx, 'url': url} for idx, url in images.items()]
 
-    return {'data': data}
+    return {'data': data, 'querySelection': session.__dict__}
 
 
 @app.route('/test')

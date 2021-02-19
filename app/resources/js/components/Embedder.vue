@@ -4,18 +4,19 @@
 
         <Sidebar></Sidebar>
 
-        <ImageGrid></ImageGrid>
+        <ProjectCreator></ProjectCreator>
+
     </div>
 </template>
 
 <script>
-import ImageGrid from './interface/ImageGrid.vue'
+import Navbar from './embedder/ProjectCreator.vue'
 import Navbar from './layout/Navbar.vue'
 import Sidebar from './layout/Sidebar.vue'
 
 export default {
     name: 'Interface',
-    components: {Navbar, Sidebar, ImageGrid},
+    components: {Navbar, Sidebar, ProjectCreator},
 
 }
 </script>

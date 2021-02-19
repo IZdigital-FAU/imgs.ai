@@ -6,7 +6,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="data" :options="datasets" v-model="query.data"></b-form-select>
+            <b-form-select id="data" :options="datasets" v-model="query.model"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -15,7 +15,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="embedders" :options="embedders" v-model="query.embedder" @change="update"></b-form-select>
+            <b-form-select id="embedders" :options="query.emb_types" v-model="query.emb_type" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -24,7 +24,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="ordering" :options="orderings" v-model="query.order" @change="update"></b-form-select>
+            <b-form-select id="ordering" :options="orderings" v-model="query.mode" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -33,7 +33,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="distance" :options="distances" v-model="query.distance" @change="update"></b-form-select>
+            <b-form-select id="distance" :options="query.distance_metrics" v-model="query.metric" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -66,19 +66,9 @@ export default {
             {value: 'annunc', text: 'Annunciations'},
             {value: 'rijks', text: 'Rijksmuseum'},
         ],
-        embedders: [
-            {value: 'vgg19', text: 'VGG19'},
-            {value: 'poses', text: 'Poses'},
-            {value: 'raw', text: 'Raw'},
-        ],
         orderings: [
-            {value: 'rank', text: 'Ranking'},
+            {value: 'ranking', text: 'Ranking'},
             {value: 'centroid', text: 'Centroid'}
-        ],
-        distances: [
-            {value: 'manhattan', text: 'Manhattan'},
-            {value: 'angular', text: 'Angular'},
-            {value: 'euclidean', text: 'Euclidean'}
         ],
     }),
 
