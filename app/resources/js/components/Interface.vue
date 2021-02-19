@@ -1,6 +1,32 @@
 <template>
     <b-card class="mt-3" header="Visual query">
-        <SearchPanel @update="update"></SearchPanel>
+        <b-row>
+            <b-col>
+                <b-row>
+                    <b-col>
+                        <b-img class="grid-item-img pos"
+                            v-for="img in positiveImages" v-bind:key="img.id"
+                            :src="img.url" :ref="img.id"
+                            @click="select(img)"></b-img>
+                    </b-col>
+                    <b-col>
+                        <b-img class="grid-item-img neg"
+                            v-for="img in negativeImages" v-bind:key="img.id"
+                            :src="img.url" :ref="img.id"
+                            @click="select(img)"></b-img>
+                    </b-col>
+                </b-row>
+
+                <b-button-group>
+                    <b-button variant="outline-danger" @click="remove()">Remove</b-button>
+                    <b-button variant="outline-info" @click="clear()">Clear</b-button>
+                </b-button-group>
+            </b-col>
+            <b-col>
+                <SearchPanel @update="update"></SearchPanel>
+            </b-col>
+        </b-row>
+        
         <CarouselModal></CarouselModal>
 
         <b-button-group v-if="this.selected_imgs.length > 0">
@@ -121,6 +147,16 @@ export default {
         },
 
         remove() {
+            this.selected_imgs.forEach(img => {
+                let posIdx = this.positiveImages.map(pos => pos.id)
+                let negIdx = this.negativeImages.map(neg => neg.id)
+
+                console.log('posIdx', posIdx)
+                console.log('imgID', img.id)
+
+                if (posIdx.includes(img.id)) this.positiveImages.splice(posIdx.indexOf(img.id), 1)
+                else if (negIdx.includes(img.id)) this.negativeImages.splice(negIdx.indexOf(img.id), 1)
+            })
             this.selected_imgs = [];
         },
 

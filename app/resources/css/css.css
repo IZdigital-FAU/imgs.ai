@@ -2,9 +2,13 @@
   width: 10%;
 }
 
-/* .grid {
-    height: 500px;
-} */
+.grid-item-img.pos {
+  width: 20%;
+}
+
+.grid-item-img.neg {
+  width: 20%;
+}
 
 .grid-item-img.hover {
   /* border: 3px dotted red; */

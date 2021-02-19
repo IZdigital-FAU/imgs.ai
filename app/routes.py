@@ -191,11 +191,6 @@ def interface():
 @app.route('/api/images', methods=["GET", "POST"])
 @login_required
 def fetch_imgs():
-    """
-    if no params => random images\n
-    else => query images
-    """
-
     session = Session(flask_session)
 
     if request.method == "POST":
