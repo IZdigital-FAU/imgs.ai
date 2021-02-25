@@ -4,19 +4,20 @@
 
         <Sidebar></Sidebar>
 
-        <ProjectCreator></ProjectCreator>
+        <Main></Main>
 
+        <router-view></router-view>
     </div>
 </template>
 
 <script>
-import Navbar from './embedder/ProjectCreator.vue'
+import Main from './Main.vue'
 import Navbar from './layout/Navbar.vue'
 import Sidebar from './layout/Sidebar.vue'
 
 export default {
-    name: 'Interface',
-    components: {Navbar, Sidebar, ProjectCreator},
+    name: 'App',
+    components: {Navbar, Sidebar, Main},
 
 }
 </script>

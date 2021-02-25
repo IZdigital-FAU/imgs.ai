@@ -6,7 +6,14 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 import '../css/css.css'
 
-import Embedder from './components/Embedder.vue'
+import routes from './router'
+import VueRouter from 'vue-router'
+Vue.use(VueRouter)
+
+const router = new VueRouter({routes})
+
+import App from './components/App.vue'
+
 
 // Make BootstrapVue available throughout your project
 Vue.use(BootstrapVue)
@@ -16,5 +23,6 @@ Vue.use(IconsPlugin)
 
 new Vue({
     el: '#app',
-    render: h => h(Embedder),
+    render: h => h(App),
+    router
 })

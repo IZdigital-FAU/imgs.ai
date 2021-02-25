@@ -1,5 +1,5 @@
 <template>
-    <b-modal id="carouselmodal" title="imgs.ai">
+    <b-modal id="carouselmodal" title="imgs.ai" hide-footer>
          <b-carousel
             id="imgs"
             v-model="slide"

@@ -10,7 +10,7 @@
 
             <b-collapse id="nav-collapse" is-nav>
             <b-navbar-nav>
-                <b-nav-item href="#">Interface</b-nav-item>
+                <b-nav-item href="/test/interface">Interface</b-nav-item>
                 <b-nav-item href="#">Embedder</b-nav-item>
             </b-navbar-nav>
 

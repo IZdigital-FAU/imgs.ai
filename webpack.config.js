@@ -5,7 +5,7 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin')
 
 
 module.exports = {
-    entry: './app/resources/js/interface.js',
+    entry: './app/resources/js/app.js',
 
     mode: 'development',
 

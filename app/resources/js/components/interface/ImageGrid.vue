@@ -53,7 +53,7 @@ import SearchPanel from './SearchPanel.vue'
 import CarouselModal from './CarouselModal.vue'
 
 export default {
-    name: 'Interface',
+    name: 'ImageGrid',
     components: {SearchPanel, CarouselModal},
 
     data : () => ({
