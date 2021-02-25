@@ -1,6 +1,5 @@
 <template>
     <div>
-        {{$route}}
         <ImageGrid v-if="$route.path === '/interface'"></ImageGrid>
         <Embedder v-else-if="$route.path === '/embedder'"></Embedder>
     </div>

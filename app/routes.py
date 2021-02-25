@@ -212,12 +212,15 @@ def fetch_imgs():
     session.get_nns()
     popovers, links, images = session.render_nns()
 
+    session.store(flask_session)
+
     data = [{'id': idx, 'url': url} for idx, url in images.items()]
 
     return {'data': data, 'querySelection': session.__dict__}
 
 
 @app.route('/test')
+@login_required
 def test():
     return render_template('test.html')
 

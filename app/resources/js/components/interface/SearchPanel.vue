@@ -41,7 +41,13 @@
             label-for="nImages"
             label-cols-sm="3"
             label-align-sm="right">
-            <b-form-input id="nImages" type="range" v-model="query.n" @change="update"></b-form-input>
+
+            <b-input-group>
+                <b-form-input id="nImages" type="range" v-model="query.n" @change="update"></b-form-input>
+                <b-input-group-append is-text class="text-monospace">
+                    {{ query.n }}
+                </b-input-group-append>
+            </b-input-group>
         </b-form-group>
     </div>
 </template>
