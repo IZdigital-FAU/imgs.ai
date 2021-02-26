@@ -1,15 +1,18 @@
 <template>
     <b-jumbotron header="Embedder" lead="Vectorize your images">
         
+        <b-form-input v-model="model.name" placeholder="collection name"></b-form-input>
+
         <b-form-file
-            v-model="inputFile"
-            :state="Boolean(inputFile)"
+            v-model="model.file"
+            :state="Boolean(model.file)"
             placeholder="Choose a file or drop it here..."
             drop-placeholder="Drop file here..."
             v-b-tooltip.hover title="csv or line separated image URLs"
         ></b-form-file>
 
         <b-list-group>
+            
             <b-list-group-item v-for="embedder in embedders">
                 <b-form-checkbox v-model="embedder.active" switch>{{embedder.name}}</b-form-checkbox>
                 <b-collapse :visible="embedder.active" :id="embedder.name">
@@ -21,34 +24,47 @@
                     </b-card>
                 </b-collapse>
             </b-list-group-item>
+
         </b-list-group>
 
-        <b-button variant="outline-primary">Embed</b-button>
+        <b-button variant="outline-primary" @click="post">Embed</b-button>
 
     </b-jumbotron>
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
     name: 'Embedder',
 
     data() {
         return {
-            inputFile: null,
-            embedders: [
-                {name: 'raw', params: {resolution: 48}, active: false},
-                {name: 'vgg19', params: {}, active: false},
-                {name: 'face', params: {dim: 128, numPeople: 2}, active: false},
-                {name: 'poses', params: {minConf: .9, numPeople: 2}, active: false},
-            ]
+            embedders: [],
+            model: {
+                name: '',
+                file: null
+            }
         }
+    },
+
+    async created() {
+        await axios.get('api/embedders').then(response => {
+            this.embedders = response.data.data
+        })
     },
 
     methods: {
         post() {
-            axios.post()
+            console.log('File', this.model.file)
+            let data = new FormData()
+
+            data.append('name', this.model.name)
+            data.append('file', this.model.file)
+            data.append('embedders', this.embedders.filter(e => e.active))
+
+            axios.post('api/embedders', data)
         }
     }
-
 }
 </script>

@@ -219,6 +219,29 @@ def fetch_imgs():
     return {'data': data, 'querySelection': session.__dict__}
 
 
+@app.route('/api/embedders', methods=["GET", "POST"])
+@login_required
+def fetch_embedders():
+    session = Session(flask_session)
+
+    embedders = {
+        'data': [
+            {'name': 'raw', 'params': {'resolution': 48}, 'active': False},
+            {'name': 'vgg19', 'params': {}, 'active': False},
+            {'name': 'face', 'params': {'dim': 128, 'numPeople': 2}, 'active': False},
+            {'name': 'poses', 'params': {'minConf': .9, 'numPeople': 2}, 'active': False},
+        ]
+    }
+
+    if request.method == "POST":
+        data = request.form
+        print('DATA', data)
+
+        print(request.files)
+
+    return embedders
+
+
 @app.route('/test')
 @login_required
 def test():
