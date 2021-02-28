@@ -18,8 +18,10 @@
                 <b-collapse :visible="embedder.active" :id="embedder.name">
                     <b-card>
                         <b-input-group :prepend="param" v-for="(value, param) in embedder.params">
-                            <b-form-input :id="param" type="range" v-model="embedder.params[param]"></b-form-input>
-                            <b-input-group-append is-text class="text-monospace">{{ value }}</b-input-group-append>
+                            <b-form-input :id="param" :type="embedder.params[param].input_type"
+                                        :min="embedder.params[param].meta.minVal" :max="embedder.params[param].meta.maxVal" :step="embedder.params[param].meta.step"
+                                        v-model="embedder.params[param].value"></b-form-input>
+                            <b-input-group-append is-text class="text-monospace">{{ embedder.params[param].value }}</b-input-group-append>
                         </b-input-group>
                     </b-card>
                 </b-collapse>
@@ -54,6 +56,26 @@ export default {
         })
     },
 
+    computed: {
+        selectedEmbedders() {
+            let result = this.embedders.filter(e => e.active)
+
+            result = result.map(embedder => {
+                let params = {}
+                
+                for (const param in embedder.params){
+                    params[param] = embedder.params[param].value
+                }
+
+                return {name: embedder.name, params: params}
+            })
+
+            console.log('Result', result)
+
+            return result
+        }
+    },
+
     methods: {
         post() {
             console.log('File', this.model.file)
@@ -61,7 +83,8 @@ export default {
 
             data.append('name', this.model.name)
             data.append('file', this.model.file)
-            data.append('embedders', this.embedders.filter(e => e.active))
+
+            data.append('embedders', JSON.stringify(this.selectedEmbedders))
 
             axios.post('api/embedders', data)
         }

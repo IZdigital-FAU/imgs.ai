@@ -224,22 +224,27 @@ def fetch_imgs():
 def fetch_embedders():
     session = Session(flask_session)
 
-    embedders = {
-        'data': [
-            {'name': 'raw', 'params': {'resolution': 48}, 'active': False},
-            {'name': 'vgg19', 'params': {}, 'active': False},
-            {'name': 'face', 'params': {'dim': 128, 'numPeople': 2}, 'active': False},
-            {'name': 'poses', 'params': {'minConf': .9, 'numPeople': 2}, 'active': False},
-        ]
-    }
+    embedder_names = ['Raw', 'VGG19', 'Face', 'Poses']
+    embedders = {name: EmbedderFactory.create(name) for name in embedder_names}
 
-    if request.method == "POST":
+    if request.method == 'POST':
         data = request.form
-        print('DATA', data)
+        print('name', data['name'])
+        import json
+        
+        print('embedders', json.loads(data['embedders']))
+
+        for embedder in json.loads(data['embedders']):
+            for param in embedder['params']:
+                embedders[embedder['name']].set_param(param, embedder['params'][param])
 
         print(request.files)
 
-    return embedders
+    payload = {
+        'data': [{'name': name, 'params': {name: obj.__dict__ for name, obj in embedder.params.items()}, 'active': False} for name, embedder in embedders.items()]
+    }
+
+    return payload
 
 
 @app.route('/test')
