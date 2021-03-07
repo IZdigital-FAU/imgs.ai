@@ -10,10 +10,15 @@ from app.session import Session
 from config import Config
 import time
 import os
-from embedders import EmbedderFactory, ReducerFactory, Embedder
+
+from .controllers.embedder import Embedder
+from .controllers.embedderFactory import EmbedderFactory
+from .controllers.reducer import ReducerFactory
+
 from train import EmbeddingCreator
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+from util import new_dir
+
+import json
 
 
 @login_manager.user_loader
@@ -224,24 +229,46 @@ def fetch_imgs():
 def fetch_embedders():
     session = Session(flask_session)
 
-    embedder_names = ['Raw', 'VGG19', 'Face', 'Poses']
-    embedders = {name: EmbedderFactory.create(name) for name in embedder_names}
+    embedders = {name: EmbedderFactory.create(name) for name in EmbedderFactory.names}
 
     if request.method == 'POST':
         data = request.form
         print('name', data['name'])
-        import json
+
+        project_name = data['name']
+        model_folder = os.path.join(Config.MODELS_PATH, project_name)
+
+        new_dir(model_folder)
+
+        # Handle url file
+        url_fpath = os.path.join(model_folder, project_name) + ".csv"
+        url_file = request.files['file']
+        url_file.save(url_fpath)
+        url_file.close()
         
         print('embedders', json.loads(data['embedders']))
 
         for embedder in json.loads(data['embedders']):
             for param in embedder['params']:
-                embedders[embedder['name']].set_param(param, embedder['params'][param])
+                embedders[embedder['name'].lower()].set_param(param, embedder['params'][param])
 
-        print(request.files)
+            embedders[embedder['name'].lower()].reducer = ReducerFactory.create(embedder['reducer']['name'], embedder['reducer']['params'])
+
+        embedding_creator = EmbeddingCreator(
+            model_folder=model_folder,
+            embedders={embedder['name'].lower() : embedders[embedder['name'].lower()] for embedder in json.loads(data['embedders'])},
+            data_location=url_fpath
+        )
+        
+        embedding_creator.train(n_trees=10)
+
+        Config.MODELS.append(project_name)
+        models[project_name] = EmbeddingModel()
+        models[project_name].load(model_folder)
+        session.load_model(project_name)
 
     payload = {
-        'data': [{'name': name, 'params': {name: obj.__dict__ for name, obj in embedder.params.items()}, 'active': False} for name, embedder in embedders.items()]
+        'data': [embedder.make_payload() for embedder in embedders.values()]
     }
 
     return payload

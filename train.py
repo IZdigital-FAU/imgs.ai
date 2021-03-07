@@ -27,7 +27,7 @@ class ModelConfig:
         self.model_len = None
         self.hood_files = {}
         self.meta_file = 'metadata.csv'
-        self.embedders_file = 'embedders.pickle'
+        self.embedder_serialization_file = 'embedders.pickle'
         self.embs_file = "embeddings.hdf5"
         self.emb_types = []
 
@@ -76,7 +76,7 @@ class EmbeddingCreator:
         self.img_locations = arrange_data(self.img_locations, shuffle, max_data)
         self.n_imgs = len(self.img_locations)
 
-        log.info(f'Setting up config')
+        log.info(f'Setting up project config')
         self.config = ModelConfig()
         self.config.data_location = self.data_location
 
@@ -89,9 +89,9 @@ class EmbeddingCreator:
             log.info("Creating embedding store + allocating space")
             self.emb_store = h5py.File(self.embs_file, "w")
 
-            for emb_type, embedder in self.embedders.items():
-                data = np.zeros((self.n_imgs, embedder['data'].feature_length))
-                self.emb_store.create_dataset(emb_type.lower(), compression="lzf", data=data)
+            for emb_name, embedder in self.embedders.items():
+                data = np.zeros((self.n_imgs, embedder.feature_length))
+                self.emb_store.create_dataset(emb_name.lower(), compression="lzf", data=data)
 
 
     def train(self, n_trees):
@@ -110,8 +110,8 @@ class EmbeddingCreator:
         log.info(f'Applying dimensionality reduction')
         for emb_type, embedder in self.embedders.items():
             data = self.emb_store[emb_type.lower()]
-            if embedder['data'].reducer:
-                data = embedder['data'].reducer.fit_transform(self.emb_store[emb_type.lower()])
+            if embedder.reducer:
+                data = embedder.reducer.fit_transform(self.emb_store[emb_type.lower()])
             cache.create_dataset(emb_type.lower(), data=data, compression="lzf")
 
         # Build and save neighborhoods
@@ -121,9 +121,9 @@ class EmbeddingCreator:
             self.config.dims[emb_type.lower()] = {}
             self.config.emb_types.append(emb_type.lower())
 
-            if embedder['data'].reducer:
-                dims = embedder['data'].reducer.n_components
-            else: dims = embedder['data'].feature_length
+            if embedder.reducer:
+                dims = embedder.reducer.n_components
+            else: dims = embedder.feature_length
 
             self.config.dims[emb_type.lower()] = dims
 
@@ -183,7 +183,7 @@ class EmbeddingCreator:
                     pbar_success.update(1)
                 
                     for emb_type, embedder in self.embedders.items():
-                        self.emb_store[emb_type.lower()][i] = embedder['data'].transform(img, self.device)
+                        self.emb_store[emb_type.lower()][i] = embedder.transform(img, self.device)
     
                 else: pbar_failure.update(1)
 
@@ -203,8 +203,8 @@ class EmbeddingCreator:
         # Save fitted embedders
         log.info("Writing additional data")
         for embedder in self.embedders.values():
-            embedder['data'].model = None  # Delete pretrained pytorch models to save memory
+            embedder.model = None  # Delete pretrained pytorch models to save memory
 
-        embedders_file = join(self.model_folder, self.config.embedders_file)
+        embedders_file = join(self.model_folder, self.config.embedder_serialization_file)
         with open(embedders_file, "wb") as f:
             pickle.dump(self.embedders, f)
