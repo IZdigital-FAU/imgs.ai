@@ -14,8 +14,8 @@ import os
 from .controllers.embedder import Embedder
 from .controllers.embedderFactory import EmbedderFactory
 from .controllers.reducer import ReducerFactory
+from .controllers.embeddingCreator import EmbeddingCreator
 
-from train import EmbeddingCreator
 from util import new_dir
 
 import json
@@ -106,93 +106,6 @@ def cdn(idx):
     return send_from_directory(root, path)
 
 
-@app.route("/interface", methods=["GET", "POST"])
-@login_required
-def interface():
-    # Load from cookie
-    session = Session(flask_session)
-
-    # Uploads
-    if request.files:
-        session.extend(request.files.getlist("file"))
-
-    # Settings
-    if "n" in request.form:
-        session.n = request.form["n"]
-    if "emb_type" in request.form:
-        session.emb_type = request.form["emb_type"]
-    if "metric" in request.form:
-        session.metric = request.form["metric"]
-    if "mode" in request.form:
-        session.mode = request.form["mode"]
-    if "size" in request.form:
-        session.size = request.form["size"]
-
-    # Actions
-    if "btn" in request.form:
-        if request.form["btn"] == "Positive":
-            new_pos = set(request.form.getlist("add-pos"))
-            session.pos_idxs = list(set(session.pos_idxs) | new_pos) # Union of sets
-            session.neg_idxs = list(set(session.neg_idxs) - new_pos)  # Difference of sets
-            log.debug(f'{current_user} added {len(new_pos)} positives')
-
-        elif request.form["btn"] == "Remove":
-            removables = set(request.form.getlist("remove"))
-            session.pos_idxs = list(set(session.pos_idxs) - removables)  # Difference of sets
-            session.neg_idxs = list(set(session.neg_idxs) - removables)  # Difference of sets
-            log.debug(f'{current_user} removed {removables} from search')
-
-        elif request.form["btn"] == "Negative":
-            session.neg_idxs = list(set(session.neg_idxs) | set(request.form.getlist("add-neg")))  # Union of sets
-            session.pos_idxs = list(set(session.pos_idxs) - set(request.form.getlist("add-neg")))  # Difference of sets
-
-        elif request.form["btn"] == "Clear":
-            session.neg_idxs = []
-            session.pos_idxs = []
-
-    # Handle single drag&drops
-    if 'add-pos' in request.form:
-        new_pos = set(request.form.getlist("add-pos"))
-        session.pos_idxs = list(set(session.pos_idxs) | new_pos) # Union of sets
-        session.neg_idxs = list(set(session.neg_idxs) - set(request.form.getlist("add-pos")))  # Difference of sets
-        log.debug(f'{current_user} added {len(new_pos)} positives')
-
-    if 'add-neg' in request.form:
-        session.neg_idxs = list(set(session.neg_idxs) | set(request.form.getlist("add-neg")))  # Union of sets
-        session.pos_idxs = list(set(session.pos_idxs) - set(request.form.getlist("add-neg")))  # Difference of sets
-
-    # Model
-    if "model" in request.form:
-        if session.model != request.form["model"]: # Only reload and reset if model changed
-            session.load_model(request.form["model"], pin_idxs=session.pos_idxs) # Keep all positive queries
-
-    # Search
-    start = time.process_time()
-    session.get_nns()
-    log.info(
-        f"Search by {current_user} in {session.model} completed in {time.process_time() - start}, returning {len(session.res_idxs)} results"
-    )
-
-    # Render data
-    popovers, links, images = session.render_nns()
-
-    # Store in cookie
-    session.store(flask_session)
-
-    log.debug(f'Positive indices: {session.pos_idxs}')
-    log.debug(f'Negative indices: {session.neg_idxs}')
-
-    return render_template(
-        "interface.html",
-        title="imgs.ai",
-        session=session,
-        Config=Config,
-        popovers=popovers,
-        links=links,
-        images=images
-    )
-
-
 @app.route('/api/images', methods=["GET", "POST"])
 @login_required
 def fetch_imgs():
@@ -252,7 +165,9 @@ def fetch_embedders():
             for param in embedder['params']:
                 embedders[embedder['name'].lower()].set_param(param, embedder['params'][param])
 
-            embedders[embedder['name'].lower()].reducer = ReducerFactory.create(embedder['reducer']['name'], embedder['reducer']['params'])
+            if embedder['reducer']:
+                embedders[embedder['name'].lower()].reducer.active = True
+                embedders[embedder['name'].lower()].reducer = ReducerFactory.create(embedder['reducer']['name'], embedder['reducer']['params'])
 
         embedding_creator = EmbeddingCreator(
             model_folder=model_folder,
@@ -278,85 +193,3 @@ def fetch_embedders():
 @login_required
 def test():
     return render_template('test.html')
-
-
-@app.route("/pipeline", methods=["GET", "POST"])
-@login_required
-def pipeline():
-    embedders = ['Raw', 'VGG19', 'Face', 'Poses']
-    reducers = ['PCA', 'TSNE']
-
-    # Load from cookie
-    session = Session(flask_session)
-
-    embedder_data = {}
-    form = EmbedderForm()
-    
-    embedder_factory = EmbedderFactory()
-    reducer_factory = ReducerFactory()
-
-    for embedder in embedders:
-        if embedder not in embedder_data:
-            embedder_data[embedder] = {'data': embedder_factory.create(embedder, {}), 'active': False}
-        for reducer in reducers:
-            embedder_data[embedder][reducer] = False
-
-    if request.method == "POST":
-        log.debug(request.form)
-
-        project_name = request.form['projectName']
-        model_folder = os.path.join(Config.MODELS_PATH, project_name)
-
-        if not os.path.isdir(model_folder):
-            os.mkdir(model_folder)
-
-        # Handle url file
-        url_fpath = os.path.join(model_folder, project_name) + ".csv"
-        log.debug(request.files)
-        url_file = request.files['urlPerLineFile']
-        url_file.save(url_fpath)
-        url_file.close()
-
-        for key, value in request.form.items():
-            if key in ('csrf_token', 'projectName', 'urlPerLineFile', 'submit'):
-                continue
-
-            if ':' not in key: #includes setting
-                log.debug(key)
-                embedder, setting = key.split('.')
-                if setting.endswith('min_score'):
-                    digitize = lambda s: float(s)
-                else:
-                    digitize = lambda s: int(s)
-                embedder_factory.set_params(embedder_data[embedder]['data'], setting, digitize(value))
-                embedder_data[embedder]['active'] = True
-
-            else: #includes reducer
-                embedder, reducer = key.split(':')
-                reducer = reducer.split('.')[0]
-
-                n_samples = len(open(url_fpath).read().split('\n')) - 1
-                if n_samples < int(value):
-                    value = n_samples
-
-                reducer_object = reducer_factory.create(reducer, {'n_components': int(value)})
-                embedder_factory.set_params(embedder_data[embedder]['data'], 'reducer', reducer_object)
-                embedder_data[embedder][reducer] = reducer_object
-        
-
-        embedding_creator = EmbeddingCreator(
-            model_folder=model_folder,
-            embedders={emb_type:embedder for emb_type, embedder in embedder_data.items() if embedder['active']},
-            data_location=url_fpath
-        )
-        
-        embedding_creator.train(n_trees=10)
-
-        Config.MODELS.append(project_name)
-        models[project_name] = EmbeddingModel()
-        models[project_name].load(model_folder)
-        session.load_model(project_name)
-
-        flash('Successfully created image vectors', 'success')
-
-    return render_template('pipeline_composition.html', embedders=embedder_data, reducers=reducers, form=form)

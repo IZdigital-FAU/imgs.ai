@@ -3,8 +3,6 @@ class Parameter:
         self.input_type = input_type # text, password, email, number, url, tel, search, date, datetime, datetime-local, month, week, time, range, color
         self.value = value
         self.meta = kwargs
-        
-        print(self.__dict__)
 
 class ParameterCollection:
     params = {

@@ -4,7 +4,6 @@ from model import EmbeddingModel
 from tqdm import tqdm
 from os.path import isfile, join
 import os
-import csv
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 import pickle
@@ -16,36 +15,10 @@ import numpy as np
 from annoy import AnnoyIndex
 from app import log
 
+from .data import ModelMetadata
+from .projectConfig import ModelConfig
 
-class ModelConfig:
-
-    def __init__(self):
-        self.data_location = None
-        self.distance_metrics = ["angular", "euclidean", "manhattan"]
-        self.dims = {}
-        self.embs_file = ''
-        self.model_len = None
-        self.hood_files = {}
-        self.meta_file = 'metadata.csv'
-        self.embedder_serialization_file = 'embedders.pickle'
-        self.embs_file = "embeddings.hdf5"
-        self.emb_types = []
-
-    def save(self, path):
-        with open(path, "w") as config_file: json.dump(self.__dict__, config_file)
-
-
-class ModelMetadata:
-
-    def __init__(self):
-        self.rows = []
-
-    def build(self, valid_idxs, img_locations):
-        for idx in valid_idxs:
-            self.rows.append([img_locations[idx]])
-
-    def save(self, path):
-        csv.writer(open(path, "w")).writerows(self.rows)
+import requests
 
 
 class EmbeddingCreator:
@@ -110,7 +83,7 @@ class EmbeddingCreator:
         log.info(f'Applying dimensionality reduction')
         for emb_type, embedder in self.embedders.items():
             data = self.emb_store[emb_type.lower()]
-            if embedder.reducer:
+            if embedder.reducer.active:
                 data = embedder.reducer.fit_transform(self.emb_store[emb_type.lower()])
             cache.create_dataset(emb_type.lower(), data=data, compression="lzf")
 
@@ -121,7 +94,7 @@ class EmbeddingCreator:
             self.config.dims[emb_type.lower()] = {}
             self.config.emb_types.append(emb_type.lower())
 
-            if embedder.reducer:
+            if embedder.reducer.active:
                 dims = embedder.reducer.n_components
             else: dims = embedder.feature_length
 
@@ -184,7 +157,7 @@ class EmbeddingCreator:
                 
                     for emb_type, embedder in self.embedders.items():
                         self.emb_store[emb_type.lower()][i] = embedder.transform(img, self.device)
-    
+
                 else: pbar_failure.update(1)
 
 
