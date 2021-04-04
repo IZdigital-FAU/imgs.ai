@@ -14,7 +14,7 @@
             @sliding-end="onSlideEnd"
             >
             <b-carousel-slide
-                v-for="img in imgs"
+                v-for="img in imgs" v-bind:key="img.id"
                 text="Nulla vitae elit libero, a pharetra augue mollis interdum."
                 :img-src="img.url"
             ></b-carousel-slide>

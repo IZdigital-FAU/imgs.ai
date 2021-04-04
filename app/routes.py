@@ -4,10 +4,10 @@ from flask import session as flask_session
 from flask_login import current_user, login_user, logout_user, login_required
 from app.forms import SignupForm, LoginForm, EmbedderForm
 from app import app, log, db, login_manager, models
-from model import EmbeddingModel
+from .model import EmbeddingModel
 from app.user import User, create_user
 from app.session import Session
-from config import Config
+from env import Environment as environment
 import time
 import os
 
@@ -95,7 +95,7 @@ def logout():
 @login_required
 def settings():
     session = Session(flask_session)
-    return render_template("settings.html", title="imgs.ai", session=session, Config=Config)
+    return render_template("settings.html", title="imgs.ai", session=session, Config=environment)
 
 
 @app.route("/cdn/<idx>")
@@ -107,7 +107,7 @@ def cdn(idx):
 
 
 @app.route('/api/images', methods=["GET", "POST"])
-@login_required
+# @login_required
 def fetch_imgs():
     session = Session(flask_session)
 
@@ -138,7 +138,7 @@ def fetch_imgs():
 
 
 @app.route('/api/embedders', methods=["GET", "POST"])
-@login_required
+# @login_required
 def fetch_embedders():
     session = Session(flask_session)
 
@@ -149,7 +149,7 @@ def fetch_embedders():
         print('name', data['name'])
 
         project_name = data['name']
-        model_folder = os.path.join(Config.MODELS_PATH, project_name)
+        model_folder = os.path.join(environment.MODELS_PATH, project_name)
 
         new_dir(model_folder)
 
@@ -177,7 +177,7 @@ def fetch_embedders():
         
         embedding_creator.train(n_trees=10)
 
-        Config.MODELS.append(project_name)
+        environment.MODELS.append(project_name)
         models[project_name] = EmbeddingModel()
         models[project_name].load(model_folder)
         session.load_model(project_name)
@@ -190,6 +190,6 @@ def fetch_embedders():
 
 
 @app.route('/test')
-@login_required
+# @login_required
 def test():
     return render_template('test.html')

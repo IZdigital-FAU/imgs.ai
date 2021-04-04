@@ -6,11 +6,11 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 import '../css/css.css'
 
-import routes from './router'
-import VueRouter from 'vue-router'
-Vue.use(VueRouter)
+import {routes} from './router'
+import Router from 'vue-router'
+Vue.use(Router)
 
-const router = new VueRouter({routes})
+const router = new Router({routes})
 
 import App from './components/App.vue'
 

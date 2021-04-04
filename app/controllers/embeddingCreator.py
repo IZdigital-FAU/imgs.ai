@@ -1,6 +1,6 @@
 from util import new_dir, set_cuda, image_from_url, load_img, get_img_paths, arrange_data, read_csv
 import h5py
-from model import EmbeddingModel
+from ..model import EmbeddingModel
 from tqdm import tqdm
 from os.path import isfile, join
 import os
@@ -16,7 +16,7 @@ from annoy import AnnoyIndex
 from app import log
 
 from .data import ModelMetadata
-from .projectConfig import ModelConfig
+from ..projectConfig import ProjectConfig
 
 import requests
 
@@ -50,7 +50,7 @@ class EmbeddingCreator:
         self.n_imgs = len(self.img_locations)
 
         log.info(f'Setting up project config')
-        self.config = ModelConfig()
+        self.config = ProjectConfig()
         self.config.data_location = self.data_location
 
         self.embs_file = join(self.model_folder, self.config.embs_file)

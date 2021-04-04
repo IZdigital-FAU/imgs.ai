@@ -32,13 +32,13 @@
 
             <b-list-group>
                 
-                <b-list-group-item v-for="embedder in embedders">
+                <b-list-group-item v-for="embedder in embedders" v-bind:key="embedder.id">
                     <b-form-checkbox v-model="embedder.active" switch>{{embedder.name}}</b-form-checkbox>
                     <b-collapse :visible="embedder.active" :id="embedder.name">
                         <b-row>
                             <b-col>
                                 <b-card>
-                                    <b-input-group :prepend="param" v-for="(value, param) in embedder.params">
+                                    <b-input-group :prepend="param" v-for="(value, param) in embedder.params" v-bind:key="param.name">
                                         <b-form-input :id="param" :type="embedder.params[param].input_type"
                                                     :min="embedder.params[param].meta.minVal" :max="embedder.params[param].meta.maxVal" :step="embedder.params[param].meta.step"
                                                     v-model="embedder.params[param].value"></b-form-input>
@@ -58,7 +58,7 @@
                                                 <template #first><b-form-select-option :value="null" disabled>-- Please select a reducer --</b-form-select-option></template>
                                             </b-form-select>
                                             
-                                            <b-input-group :prepend="param" v-for="(value, param) in embedder.reducer.params">
+                                            <b-input-group :prepend="param" v-for="(value, param) in embedder.reducer.params" v-bind:key="param.name">
                                                 <b-form-input :id="param" :type="embedder.reducer.params[param].input_type"
                                                             :min="embedder.reducer.params[param].meta.minVal" :max="embedder.reducer.params[param].meta.maxVal" :step="embedder.reducer.params[param].meta.step"
                                                             v-model="embedder.reducer.params[param].value"></b-form-input>

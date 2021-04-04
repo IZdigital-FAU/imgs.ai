@@ -1,30 +1,29 @@
 import os
 import numpy as np
-from config import Config
 from util import sample_range
 from io import BytesIO
 import time
 import numpy as np
 import PIL.Image
 from app import models, log
-from config import Config
+from env import Environment as environment
 from flask import url_for, send_from_directory
-
 
 # Per-user state, deals with server-side models and serialization as client session
 class Session:
 
-    size = Config.DEFAULT_SIZE
-    n = Config.DEFAULT_N
-    mode = Config.DEFAULT_MODE
+    size = environment.DEFAULT_SIZE
+    n = environment.DEFAULT_N
+    mode = environment.DEFAULT_MODE
 
     def __init__(self, flask_session):
         if "model" in flask_session:
             self.restore(flask_session)
         else:
-            self.load_model(Config.MODELS[0])
+            self.load_model(environment.MODELS[0])
 
     def store(self, flask_session):
+        print('here comes the flask session as dict:', flask_session.__dict__)
         flask_session["model"] = self.model
         flask_session["size"] = self.size
         flask_session["mode"] = self.mode
@@ -72,12 +71,12 @@ class Session:
         self.emb_types = models[self.model].config["emb_types"]
         self.distance_metrics = models[self.model].config["distance_metrics"]
 
-        # Hack to always show VGG19 embeddings first, independent of model config file
+        # Hack to always show VGG19 embeddings first, independent of model env file
         if "vgg19" in self.emb_types:
             idx = self.emb_types.index("vgg19")
             self.emb_types.insert(0, self.emb_types.pop(idx))
 
-        # Hack to always show manhattan distance first, independent of model config file
+        # Hack to always show manhattan distance first, independent of model env file
         if "manhattan" in self.distance_metrics:
             idx = self.distance_metrics.index("manhattan")
             self.distance_metrics.insert(0, self.distance_metrics.pop(idx))
@@ -98,11 +97,14 @@ class Session:
                 mode=self.mode,
             )
         else:
+            idxs = []
             k = int(self.n)
-            if k > self.model_len:
-                idxs = sample_range(self.model_len, self.model_len)
-            else:
+            if self.model_len:
+                print(self.model_len)
+                k = min(k, self.model_len)
                 idxs = sample_range(self.model_len, k)
+            else:
+                idxs = sample_range(k, k)
             self.res_idxs = [str(idx) for idx in idxs]  # Indices are strings
 
     def render_nns(self):
@@ -120,11 +122,12 @@ class Session:
 
     def get_data(self, idx):
         if idx.startswith("upload"):
-            root = Config.UPLOADS_PATH
+            root = environment.UPLOADS_PATH
             path = f"{idx}.jpg"
             source = ""
             metadata = []
         else:
+            print('what is path:', models[self.model].paths)
             path = models[self.model].paths[idx]
             if path.startswith("http"):
                 root = ""

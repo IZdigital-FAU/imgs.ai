@@ -5,20 +5,19 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from flask_cors import CORS
+# from flask_cors import CORS
 from flask_bootstrap import Bootstrap
-from config import Config
-from model import EmbeddingModel
+from env import Environment as environment
+from .model import EmbeddingModel
 from datetime import date
-
 
 # Start app
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config.from_object(environment)
 
 # Plugins
 Bootstrap(app)  # Bootstrap
-CORS(app)  # CORS
+# CORS(app)  # CORS
 login_manager = LoginManager(app)  # Login
 login_manager.login_view = "login"
 login_manager.login_message_category = "warning"
@@ -41,9 +40,9 @@ migrate = Migrate(app, db)
 
 # Models
 models = {}
-for model in Config.MODELS:
+for model in environment.MODELS:
     models[model] = EmbeddingModel()
-    MODEL_PATH = os.path.join(Config.MODELS_PATH, model)
+    MODEL_PATH = os.path.join(environment.MODELS_PATH, model)
     if os.path.isfile(os.path.join(MODEL_PATH, 'config.json')):
         models[model].load(MODEL_PATH)
 
