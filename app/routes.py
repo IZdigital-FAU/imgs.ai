@@ -99,7 +99,7 @@ def settings():
 
 
 @app.route("/cdn/<idx>")
-@login_required
+# @login_required
 def cdn(idx):
     session = Session(flask_session)
     root, path, _, _ = session.get_data(idx)
@@ -115,22 +115,12 @@ def fetch_imgs():
 
     if request.method == "POST":
         data = request.get_json()
-        print('DATA', data)
-
-        session.model = data['model']
-        session.n = data['n']
-
-        session.emb_type = data["emb_type"]
-        session.metric = data["metric"]
-        session.mode = data["mode"]
-
-        session.pos_idxs = data['pos_idxs']
-        session.neg_idxs = data['neg_idxs']
+        session.read(data)
 
     session.get_nns()
     popovers, links, images = session.render_nns()
 
-    session.store(flask_session)
+    session.write(flask_session)
 
     data = [{'id': idx, 'url': url} for idx, url in images.items()]
 

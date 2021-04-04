@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from util import sample_range
 from io import BytesIO
 import time
 import numpy as np
@@ -12,40 +11,27 @@ from flask import url_for, send_from_directory
 # Per-user state, deals with server-side models and serialization as client session
 class Session:
 
-    size = environment.DEFAULT_SIZE
-    n = environment.DEFAULT_N
-    mode = environment.DEFAULT_MODE
-
     def __init__(self, flask_session):
-        if "model" in flask_session:
-            self.restore(flask_session)
-        else:
-            self.load_model(environment.MODELS[0])
+        self.model = None
+        self.size = None
+        self.mode = environment.DEFAULT_MODE
+        self.emb_type = None
+        self.metric = None
+        self.res_idxs = []
+        self.pos_idxs = []
+        self.neg_idxs = []
+        self.n = environment.DEFAULT_N
 
-    def store(self, flask_session):
-        print('here comes the flask session as dict:', flask_session.__dict__)
-        flask_session["model"] = self.model
-        flask_session["size"] = self.size
-        flask_session["mode"] = self.mode
-        flask_session["emb_type"] = self.emb_type
-        flask_session["metric"] = self.metric
-        flask_session["res_idxs"] = self.res_idxs
-        flask_session["pos_idxs"] = self.pos_idxs
-        flask_session["neg_idxs"] = self.neg_idxs
-        flask_session["n"] = self.n
+        self.load_model(environment.MODELS[0])
 
-
-    def restore(self, flask_session):
-        self.model = flask_session["model"]
-        self.size = flask_session["size"]
-        self.mode = flask_session["mode"]
-        self.emb_type = flask_session["emb_type"]
-        self.metric = flask_session["metric"]
-        self.res_idxs = flask_session["res_idxs"]
-        self.pos_idxs = flask_session["pos_idxs"]
-        self.neg_idxs = flask_session["neg_idxs"]
-        self.n = flask_session["n"]
+    def read(self, flask_session, *keys):
+        if not keys: keys = self.__dict__.keys()
+        [setattr(self, key, flask_session[key]) for key in keys]
         self.load_model_params() # No need to save those
+
+    def write(self, flask_session, *keys):
+        if not keys: keys = self.__dict__.keys()
+        for key in keys: flask_session[key] = getattr(self, key)
 
     def load_model(self, model, pin_idxs=None):
 
@@ -67,9 +53,9 @@ class Session:
         if files: self.extend(files)
         
     def load_model_params(self):
-        self.model_len = models[self.model].config["model_len"]
-        self.emb_types = models[self.model].config["emb_types"]
-        self.distance_metrics = models[self.model].config["distance_metrics"]
+        self.model_len = models[self.model].config.model_len
+        self.emb_types = models[self.model].config.emb_types
+        self.distance_metrics = models[self.model].config.distance_metrics
 
         # Hack to always show VGG19 embeddings first, independent of model env file
         if "vgg19" in self.emb_types:
@@ -85,27 +71,14 @@ class Session:
         self.pos_idxs += models[self.model].extend(files)
 
     def get_nns(self):
-        # If we have queries, search nearest neighbors, else display random data points
-        # (ignore negative only examples, as results will be random anyway)
-        if self.pos_idxs or (self.pos_idxs and self.neg_idxs):
-            self.res_idxs = models[self.model].get_nns(
-                emb_type=self.emb_type,
-                n=int(self.n),
-                pos_idxs=self.pos_idxs,
-                neg_idxs=self.neg_idxs,
-                metric=self.metric,
-                mode=self.mode,
-            )
-        else:
-            idxs = []
-            k = int(self.n)
-            if self.model_len:
-                print(self.model_len)
-                k = min(k, self.model_len)
-                idxs = sample_range(self.model_len, k)
-            else:
-                idxs = sample_range(k, k)
-            self.res_idxs = [str(idx) for idx in idxs]  # Indices are strings
+        self.res_idxs = models[self.model].compute_nns(
+            emb_type=self.emb_type,
+            n=self.n,
+            pos_idxs=self.pos_idxs,
+            neg_idxs=self.neg_idxs,
+            metric=self.metric,
+            mode=self.mode,
+        )
 
     def render_nns(self):
         # Get metadata and load thumbnails
@@ -132,7 +105,7 @@ class Session:
             if path.startswith("http"):
                 root = ""
             else:
-                root = models[self.model].config["data_location"]
+                root = models[self.model].config.data_location
             source = models[self.model].sources[idx]
             metadata = models[self.model].metadata[idx]
         return root, path, source, metadata

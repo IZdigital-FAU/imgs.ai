@@ -66,10 +66,10 @@ export default {
         datasets: [
             {value: 'met', text: 'Met'},
             {value: 'celeba', text: 'CelebA'},
-            {value: 'moma', text: 'MoMA'},
+            {value: 'MoMA', text: 'MoMA'},
             {value: 'harvard', text: 'Harvard'},
             {value: 'rezeption', text: 'Rezeption'},
-            {value: 'annunc', text: 'Annunciations'},
+            {value: 'Annunciations', text: 'Annunciations'},
             {value: 'rijks', text: 'Rijksmuseum'},
         ],
         orderings: [
