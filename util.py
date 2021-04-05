@@ -141,4 +141,6 @@ def get_img_paths(folder) -> list:
 
 
 def get_embedder_names():
-    return [emb.lower()[:-3] for emb in listdir(abspath('app/controllers/embedders')) if emb.endswith('.py')]
+    embedders = [emb.lower()[:-3] for emb in listdir(abspath('app/controllers/embedders')) if emb.endswith('.py')]
+    print('embedder names', embedders)
+    return embedders

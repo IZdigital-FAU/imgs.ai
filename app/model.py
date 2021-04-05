@@ -55,6 +55,7 @@ class EmbeddingModel:
 
         return idxs
 
+
     def compute_nns(self, emb_type, n, pos_idxs, neg_idxs, metric, mode="ranking", search_k=-1, limit=None):
         # If we have queries, search nearest neighbors, else display random data points
         # (ignore negative only examples, as results will be random anyway)
@@ -111,14 +112,8 @@ class EmbeddingModel:
         for i, path in enumerate(paths):
             for emb_type, embedder in embedders.items():
                 embs[emb_type][i] = embedder['data'].transform(load_img(path), device)
-
-        # Delete models to save memory
-        for emb_type, embedder in embedders.items():
-            embedder['data'].model = None  # Delete models to save memory
-
-        # Reduce if reducer given
-        for emb_type, embedder in embedders.items():
-            if embedder['data'].reducer: embs[emb_type] = embedder['data'].reducer.transform(embs[emb_type])
+                embedder['data'].model = None  # Delete models to save memory
+                if embedder['data'].reducer: embs[emb_type] = embedder['data'].reducer.transform(embs[emb_type]) # Reduce if reducer given
 
         # Unload embedders file
         f.close()

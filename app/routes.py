@@ -106,9 +106,13 @@ def cdn(idx):
     return send_from_directory(root, path)
 
 
-@app.route('/api/datasets', methods=['GET'])
+@app.route('/api/metadata', methods=['GET'])
 def request_datasets():
-    return json.dumps(environment.MODELS)
+    session = Session(flask_session)
+    return json.dumps({
+        'datasets': environment.MODELS,
+        'embedders': session.model.config.emb_types
+    })
 
 
 @app.route('/api/images', methods=["GET", "POST"])

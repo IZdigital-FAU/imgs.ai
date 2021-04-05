@@ -4,9 +4,9 @@
 
         <Sidebar></Sidebar>
 
-        <transition name="fade">
+        <keep-alive>
             <router-view></router-view>
-        </transition>
+        </keep-alive>
     </div>
 </template>
 
