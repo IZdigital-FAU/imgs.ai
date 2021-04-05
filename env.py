@@ -8,6 +8,9 @@ class Environment(object):
     SQLALCHEMY_DATABASE_URI = (
         f"sqlite:////home/{username}/imgs.ai/database/users.db"  # Absolute
     )
+
+    MONGODB = "mongodb://127.0.0.1:27017"
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADS_PATH = f"/home/{username}/imgs.ai/uploads"  # Absolute
     MODELS_PATH = f"/home/{username}/projects"  # Absolute

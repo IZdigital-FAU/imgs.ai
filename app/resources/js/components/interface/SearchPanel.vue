@@ -53,6 +53,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 
 export default {
     name: 'SearchPanel',
@@ -63,20 +64,18 @@ export default {
         selectedOrdering: 'rank',
         selectedDistance: 'manhattan',
 
-        datasets: [
-            {value: 'met', text: 'Met'},
-            {value: 'celeba', text: 'CelebA'},
-            {value: 'MoMA', text: 'MoMA'},
-            {value: 'harvard', text: 'Harvard'},
-            {value: 'rezeption', text: 'Rezeption'},
-            {value: 'Annunciations', text: 'Annunciations'},
-            {value: 'rijks', text: 'Rijksmuseum'},
-        ],
+        datasets: [],
         orderings: [
             {value: 'ranking', text: 'Ranking'},
             {value: 'centroid', text: 'Centroid'}
         ],
     }),
+
+    async created() {
+        await axios.get('api/datasets').then(response => {
+            this.datasets = response.data.map(name => ({value: name, text: name}))
+        })
+    },
 
     computed: {
         query() {

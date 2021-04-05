@@ -106,6 +106,11 @@ def cdn(idx):
     return send_from_directory(root, path)
 
 
+@app.route('/api/datasets', methods=['GET'])
+def request_datasets():
+    return json.dumps(environment.MODELS)
+
+
 @app.route('/api/images', methods=["GET", "POST"])
 # @login_required
 def fetch_imgs():
@@ -157,7 +162,7 @@ def fetch_embedders():
 
             if embedder['reducer']:
                 embedders[embedder['name'].lower()].reducer.active = True
-                embedders[embedder['name'].lower()].reducer = ReducerFactory.create(embedder['reducer']['name'], embedder['reducer']['params'])
+                embedders[embedder['name'].lower()].reducer.be(embedder['reducer']['name'], embedder['reducer']['params'])
 
         embedding_creator = EmbeddingCreator(
             model_folder=model_folder,

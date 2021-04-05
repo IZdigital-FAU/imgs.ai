@@ -83,8 +83,10 @@ class EmbeddingCreator:
         log.info(f'Applying dimensionality reduction')
         for emb_type, embedder in self.embedders.items():
             data = self.emb_store[emb_type.lower()]
-            if embedder.reducer.active:
-                data = embedder.reducer.fit_transform(self.emb_store[emb_type.lower()])
+
+            # print('\033[31mHEmbedder.reducer.active?\033[0m', embedder)
+            if embedder.reducer:
+                data = embedder.reducer.obj.fit_transform(self.emb_store[emb_type.lower()])
             cache.create_dataset(emb_type.lower(), data=data, compression="lzf")
 
         # Build and save neighborhoods
@@ -94,7 +96,7 @@ class EmbeddingCreator:
             self.config.dims[emb_type.lower()] = {}
             self.config.emb_types.append(emb_type.lower())
 
-            if embedder.reducer.active:
+            if embedder.reducer:
                 dims = embedder.reducer.n_components
             else: dims = embedder.feature_length
 

@@ -3,10 +3,11 @@ from .embedders.VGG19 import VGG19
 from .embedders.Face import Face
 from .embedders.Poses import Poses
 
+from util import get_embedder_names
 
 class EmbedderFactory:
 
-    names = ['raw', 'vgg19', 'face', 'poses']
+    names = get_embedder_names()
 
     @staticmethod
     def create(embedder):

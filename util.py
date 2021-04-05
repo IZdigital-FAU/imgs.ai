@@ -13,6 +13,9 @@ import pybase64
 from functools import lru_cache
 import csv
 
+from os import listdir
+from os.path import abspath
+
 
 @lru_cache(maxsize=100)  # Cache up to 100 images
 def fast_base64img(path, load_urls=False):
@@ -135,3 +138,7 @@ def get_img_paths(folder) -> list:
             img_paths.append([os.path.abspath(os.path.join(root, fname)), "", None])
     
     return img_paths
+
+
+def get_embedder_names():
+    return [emb.lower()[:-3] for emb in listdir(abspath('app/controllers/embedders')) if emb.endswith('.py')]

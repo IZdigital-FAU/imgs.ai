@@ -1,0 +1,69 @@
+from collections import defaultdict
+from util import sort_dict
+
+
+class NearestNeighborOperator:
+
+    def __init__(self, ann, search_k, uploads, include_distances):
+        self.ann = ann
+        
+        self.search_k = search_k
+        self.include_distances = include_distances
+        self.nns = []
+        self.scores = []
+
+        self.pos = []
+        self.neg = []
+
+        # tmp solution
+        self.uploads = uploads
+    
+    def centroid(self, pos, neg, n):
+        self.pos = pos
+        self.neg = neg
+
+        vectors = np.array(self.vectors_from_idxs(pos + neg))
+        centroid = vectors.mean(axis=0)
+        pos_vectors = np.array(self.vectors_from_idxs(pos))
+        neg_vectors = np.array(self.vectors_from_idxs(neg))
+
+        centroid += pos_vectors.sum(axis=0)
+        centroid -= neg_vectors.sum(axis=0)
+
+        self.nns, self.scores = self.ann.get_nns_by_vector(centroid, n, search_k=self.search_k, include_distances=self.include_distances)
+
+        return self.nns
+
+
+    def ranking(self, idxs, n):
+        ranking = defaultdict()
+        for idx in idxs:
+            vector = self.vectors_from_idxs([idx])[0]
+            self.nns, self.scores = self.ann.get_nns_by_vector(vector, n, search_k=self.search_k, include_distances=self.include_distances)
+            for nn, score in zip(self.nns, self.scores):
+                # If the neighbor was found already, just update the score
+                ranking[nn] = max(ranking[nn], score) if nn in ranking else score
+                
+        self.nns = list(sort_dict(ranking).keys())
+        self._clean(n)
+
+        return self.nns
+
+
+    # Get vectors from indices
+    def vectors_from_idxs(self, idxs):
+        vectors = []
+        for idx in idxs:
+            # Index for upload has UUID4 format to make it unique across models
+            if idx.startswith("upload"):
+                vectors.append(self.uploads[idx][emb_type])
+            else:
+                vectors.append(self.ann.get_item_vector(int(idx)))  # Indices are strings
+            return vectors
+
+
+    def _clean(self, n):
+        self.nns = [str(nn) for nn in self.nns]  # Indices are strings
+        self.nns = list(set(self.nns) - set(self.pos + self.neg))  # Remove queries
+        self.nns = self.nns[:n]  # Limit to n
+        return self.nns

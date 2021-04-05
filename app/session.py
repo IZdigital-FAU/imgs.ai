@@ -86,6 +86,7 @@ class Session:
         links = {}
         images = {}
         idxs = self.pos_idxs + self.neg_idxs + self.res_idxs
+
         for idx in idxs:
             root, path, source, metadata = self.get_data(idx)
             popovers[idx] = "\n".join(metadata) # All but path and source
@@ -100,7 +101,6 @@ class Session:
             source = ""
             metadata = []
         else:
-            print('what is path:', models[self.model].paths)
             path = models[self.model].paths[idx]
             if path.startswith("http"):
                 root = ""

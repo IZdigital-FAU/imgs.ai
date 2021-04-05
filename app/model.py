@@ -1,4 +1,4 @@
-from util import set_cuda, load_img, sort_dict, upload_imgs_to, read_csv, sample_range
+from util import set_cuda, load_img, upload_imgs_to, read_csv, sample_range
 import numpy as np
 import PIL.Image
 import os
@@ -10,6 +10,7 @@ import h5py
 import csv
 
 from .projectConfig import ProjectConfig
+from .controllers.NearestNeighborOperator import NearestNeighborOperator
 
 
 class EmbeddingModel:
@@ -64,7 +65,6 @@ class EmbeddingModel:
             k = min(int(n), self.config.model_len)
             idxs = sample_range(self.config.model_len, k)
 
-            print('\e[0;91m indices set', idxs)
             self.res_idxs = [str(idx) for idx in idxs]  # Indices are strings
             return self.res_idxs
 
@@ -77,73 +77,19 @@ class EmbeddingModel:
         uploads_file = os.path.join(self.model_folder, "uploads.hdf5")
         uploads = h5py.File(uploads_file, "a")
 
-        # Get vectors from indices
-        def vectors_from_idxs(idxs):
-            vectors = []
-            for idx in idxs:
-                # Index for upload has UUID4 format to make it unique across models
-                if idx.startswith("upload"):
-                    vectors.append(uploads[idx][emb_type])
-                else:
-                    vectors.append(ann.get_item_vector(int(idx)))  # Indices are strings
-                return vectors
-
         nns = []
 
         # Don't try to display more than we have
         n = min(n, len(self))
 
+        nnop = NearestNeighborOperator(ann, search_k, uploads, include_distances=1)
+
         # Get nearest neighbors
-        if pos_idxs and neg_idxs:  # Arithmetic
-            vectors = np.array(vectors_from_idxs(pos_idxs + neg_idxs))
-            centroid = vectors.mean(axis=0)
-            pos_vectors = np.array(vectors_from_idxs(pos_idxs))
-            neg_vectors = np.array(vectors_from_idxs(neg_idxs))
-
-            pos_sum = 0
-            for vector in pos_vectors:
-                pos_sum += vector
-            centroid += pos_sum
-            neg_sum = 0
-            for vector in neg_vectors:
-                neg_sum += vector
-            centroid -= neg_sum
-
-            # pos_centroid = pos_vectors.mean(axis=0)
-            # neg_centroid = neg_vectors.mean(axis=0)
-            # query_vector = pos_centroid - neg_centroid
-
-            nns = ann.get_nns_by_vector(centroid, n, search_k=search_k, include_distances=False)
-
-        elif (len(pos_idxs) > 1 and len(neg_idxs) == 0 and mode == "centroid"):  # Centroid
-            vectors = np.array(vectors_from_idxs(pos_idxs))
-            centroid = vectors.mean(axis=0)
-            nns = ann.get_nns_by_vector(centroid, n, search_k=search_k, include_distances=False)
-
-        elif len(pos_idxs) > 1 and len(neg_idxs) == 0 and mode == "ranking":  # Ranking
-            ranking = {}
-            for idx in pos_idxs:
-                vector = vectors_from_idxs([idx])[0]
-                idx_nns, idx_scores = ann.get_nns_by_vector(vector, n, search_k=search_k, include_distances=True)
-                for nn, score in zip(idx_nns, idx_scores):
-                    # If the neighbor was found already, just update the score
-                    if nn in ranking:
-                        if ranking[nn] > score:
-                            ranking[nn] = score
-                    else:
-                        ranking[nn] = score
-            nns = list(sort_dict(ranking).keys())
-
-        else:  # Single
-            vector = vectors_from_idxs(pos_idxs)[0]
-            nns = ann.get_nns_by_vector(vector, n, search_k=search_k, include_distances=False)
+        if pos_idxs and neg_idxs: nns = nnop.centroid(pos_idx, neg_idx, n)
+        elif mode == "ranking": nns = nnop.ranking(pos_idxs, n)
 
         # Unload neighborhood file
         ann.unload()
-
-        nns = [str(nn) for nn in nns]  # Indices are strings
-        nns = list(set(nns) - set(pos_idxs + neg_idxs))  # Remove queries
-        nns = nns[:n]  # Limit to n
 
         return nns
 

@@ -11,6 +11,8 @@ from env import Environment as environment
 from .model import EmbeddingModel
 from datetime import date
 
+from pymongo import MongoClient
+
 # Start app
 app = Flask(__name__)
 app.config.from_object(environment)
@@ -37,6 +39,11 @@ log.addHandler(console_handler)
 # Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+client = MongoClient(environment.MONGODB)
+mongodb = client["imgsai"]
+
+print('MONGODB', mongodb)
 
 # Models
 models = {}
