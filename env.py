@@ -9,12 +9,18 @@ class Environment(object):
         f"sqlite:////home/{username}/imgs.ai/database/users.db"  # Absolute
     )
 
-    MONGODB = "mongodb://127.0.0.1:27017"
+    MONGODB_DB = 'imgsai'
+    MONGODB_HOST = '127.0.0.1'
+    MONGODB_PORT = 27017
+    MONGODB_USERNAME = ''
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADS_PATH = f"/home/{username}/imgs.ai/uploads"  # Absolute
-    MODELS_PATH = f"/home/{username}/projects"  # Absolute
-    MODELS = [f.name for f in os.scandir(MODELS_PATH) if f.is_dir()]
+    PROJECTS_DIR = f"/home/{username}/projects"  # Absolute
+    PROJECTS = [f.name for f in os.scandir(PROJECTS_DIR) if f.is_dir()]
+
+    ANNOY_DISTANCE_METRICS = ["angular", "euclidean", "manhattan", "hamming", "dot"] # https://github.com/spotify/annoy#full-python-api
+
     NS = ["10", "20", "30", "40", "50", "60", "70", "80", "90", "100"]
     DEFAULT_N = "30"
     SIZES = ["32", "64", "96", "128", "160", "192", "224"]

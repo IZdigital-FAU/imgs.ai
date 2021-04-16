@@ -1,28 +1,50 @@
 import logging
 import sys
-import os
+from os.path import join, isfile
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 # from flask_cors import CORS
 from flask_bootstrap import Bootstrap
 from env import Environment as environment
-from .model import EmbeddingModel
+from .project import Project
 from datetime import date
 
-from pymongo import MongoClient
+from .database import db
+
+from .routes.auth import auth
+from .routes.api import api
+from .routes.views import view
+
+from flask import Blueprint
+
+# from flask_session import Session
 
 # Start app
 app = Flask(__name__)
 app.config.from_object(environment)
 
-# Plugins
-Bootstrap(app)  # Bootstrap
-# CORS(app)  # CORS
+# Session(app)
+
+db.init_app(app)
+
+app.register_blueprint(auth)
+app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(view)
+
+# Auth
 login_manager = LoginManager(app)  # Login
 login_manager.login_view = "login"
 login_manager.login_message_category = "warning"
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+login_manager.blueprint_login_views = {
+    'auth': '/',
+    'api': '/api',
+    'view': '/',
+}
 
 # Logging
 logging.captureWarnings(True)
@@ -35,22 +57,3 @@ file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 log.addHandler(file_handler)
 log.addHandler(console_handler)
-
-# Database
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-client = MongoClient(environment.MONGODB)
-mongodb = client["imgsai"]
-
-print('MONGODB', mongodb)
-
-# Models
-models = {}
-for model in environment.MODELS:
-    models[model] = EmbeddingModel()
-    MODEL_PATH = os.path.join(environment.MODELS_PATH, model)
-    if os.path.isfile(os.path.join(MODEL_PATH, 'config.json')):
-        models[model].load(MODEL_PATH)
-
-from app import user, routes

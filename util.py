@@ -86,6 +86,7 @@ def from_device(tensor):
 
 
 def new_dir(folder):
+    """Create `folder` if not exists"""
     os.makedirs(folder, exist_ok=True)
     return folder
 
@@ -105,32 +106,6 @@ def arrange_data(X, shuffle=0, max_data=0) -> list:
 def list2dict(l) -> dict:
     return {str(i):elm for i, elm in enumerate(l)}
 
-def read_csv(fpath, to_dict=0):
-    paths = []
-    sources = []
-    metadata = []
-
-    with open(fpath) as csv_file:
-        data_table = csv.reader(csv_file)
-        for row in data_table:
-            paths.append(row[0])
-
-            if len(row) == 1:
-                sources.append(row[0])
-                metadata.append([])
-                continue
-            # else:
-            sources.append(row[1])
-            metadata.append(row[2:])
-
-    if to_dict:
-        metadata = list2dict(metadata)
-        paths = list2dict(paths)
-        sources = list2dict(sources)
-
-    return paths, sources, metadata
-
-
 def get_img_paths(folder) -> list:
     img_paths = []
     for root, dirs, files in os.walk(folder):
@@ -141,6 +116,6 @@ def get_img_paths(folder) -> list:
 
 
 def get_embedder_names():
-    embedders = [emb.lower()[:-3] for emb in listdir(abspath('app/controllers/embedders')) if emb.endswith('.py')]
+    embedders = [emb[:-3] for emb in listdir(abspath('app/controllers/embedders')) if emb.endswith('.py')]
     print('embedder names', embedders)
     return embedders

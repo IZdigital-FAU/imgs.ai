@@ -17,7 +17,7 @@ class NearestNeighborOperator:
 
         # tmp solution
         self.uploads = uploads
-    
+
     def centroid(self, pos, neg, n):
         self.pos = pos
         self.neg = neg

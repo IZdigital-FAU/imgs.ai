@@ -6,7 +6,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="data" :options="datasets" v-model="query.model"></b-form-select>
+            <b-form-select id="data" :options="metadata.projects" v-model="query.project"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -15,7 +15,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="embedders" :options="query.emb_types" v-model="query.emb_type" @change="update"></b-form-select>
+            <b-form-select id="embedders" :options="metadata.embedders" v-model="query.embedder" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -24,7 +24,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="ordering" :options="orderings" v-model="query.mode" @change="update"></b-form-select>
+            <b-form-select id="ordering" :options="metadata.orderings" v-model="query.mode" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -33,7 +33,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="distance" :options="query.distance_metrics" v-model="query.metric" @change="update"></b-form-select>
+            <b-form-select id="distance" :options="metadata.distance_metrics" v-model="query.metric" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -59,21 +59,12 @@ export default {
     name: 'SearchPanel',
 
     data : () => ({
-        selectedData: '',
-        selectedEmbedder: 'vgg19',
-        selectedOrdering: 'rank',
-        selectedDistance: 'manhattan',
-
-        datasets: [],
-        orderings: [
-            {value: 'ranking', text: 'Ranking'},
-            {value: 'centroid', text: 'Centroid'}
-        ],
+        metadata: {}
     }),
 
-    async created() {
-        await axios.get('api/datasets').then(response => {
-            this.datasets = response.data.map(name => ({value: name, text: name}))
+    async activated() {
+        await axios.get('api/metadata').then(response => {
+            this.metadata = response.data
         })
     },
 
