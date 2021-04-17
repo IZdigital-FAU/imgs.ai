@@ -16,6 +16,9 @@ import csv
 from os import listdir
 from os.path import abspath
 
+from logger import log
+
+import urllib
 
 @lru_cache(maxsize=100)  # Cache up to 100 images
 def fast_base64img(path, load_urls=False):
@@ -35,17 +38,14 @@ def fast_base64img(path, load_urls=False):
     return img_str
 
 
-def image_from_url(url, max_tries=10):
-    tries = 0
-    while tries < max_tries:
-        try:
-            response = requests.get(url, timeout=30)
-            image_bytes = BytesIO(response.content)
-            img = PIL.Image.open(image_bytes).convert("RGB")
-            return img
-        except:
-            tries += 1
-        time.sleep(1)
+def image_from_url(url):
+    response = requests.get(url)
+    
+    response.raise_for_status()
+
+    image_bytes = BytesIO(response.content)
+    img = PIL.Image.open(image_bytes).convert("RGB")
+    return img
 
 
 def upload_imgs_to(files, folder):
@@ -116,6 +116,6 @@ def get_img_paths(folder) -> list:
 
 
 def get_embedder_names():
-    embedders = [emb[:-3] for emb in listdir(abspath('app/controllers/embedders')) if emb.endswith('.py')]
+    embedders = [emb[:-3] for emb in listdir(abspath('app/scripts/embedders')) if emb.endswith('.py')]
     print('embedder names', embedders)
     return embedders

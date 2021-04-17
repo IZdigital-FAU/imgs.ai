@@ -1,17 +1,17 @@
 from flask import Blueprint, request, session
+
 from os.path import join
+import os
 
 import json
 import csv
 
 from env import Environment as env
 
-from ..controllers.embeddingCreator import EmbeddingCreator
-from ..controllers.embedderFactory import EmbedderFactory
+from ..scripts.embeddingCreator import EmbeddingCreator
+from ..scripts.embedderFactory import EmbedderFactory
 
-from ..project import Project
-
-from ..models.imagemetadata import Project as ProjectModel, ImageMetadata, Embedder, Reducer
+from ..models.imagemetadata import Project, ImageMetadata, Embedder, Reducer
 
 
 api = Blueprint('api', __name__)
@@ -20,71 +20,52 @@ api = Blueprint('api', __name__)
 @api.route('/metadata', methods=['GET'])
 def get_metadata():
     return {
-        'projects': [{'text': project, 'value': project} for project in env.PROJECTS],
-        'embedders': [{'text': embedder, 'value': embedder} for embedder in EmbedderFactory.names], # TODO: Load only project-immanent embedders
-        'orderings': [{'text': mode, 'value': mode} for mode in env.MODES],
-        'distance_metrics': [{'text': metric, 'value': metric} for metric in env.ANNOY_DISTANCE_METRICS]
-    }
+            'projects': [project.name for project in Project.objects()],
+            'embedders': EmbedderFactory.names, # TODO: Load only project-immanent embedders
+            'orderings': env.MODES,
+            'distance_metrics': env.ANNOY_DISTANCE_METRICS
+        }
 
 @api.route("/<idx>")
 def cdn(idx):
-    root, path, _, _ = session.get_data(idx)
     return send_from_directory(root, path)
 
 
 @api.route('/images', methods=["GET", "POST"])
 def fetch_imgs():
-    projectModel = ProjectModel.objects().first()
+    project = Project.objects().filter(name=session['project']).first()
+    embedding_creator = EmbeddingCreator(project.id)
 
-    embedding_creator = EmbeddingCreator(projectModel.id)
-    
-    session['embedder'] = projectModel.embedders.first().name
-    session['pos'] = []
-    session['neg'] = []
-    session['n'] = 30
-    session['metric'] = env.ANNOY_DISTANCE_METRICS[0]
-    session['mode'] = env.MODES[0]
+    images = embedding_creator.compute_nns(**{k:v for k,v in session.items() if k != 'project'})
 
-    if request.method == "POST":
-        data = request.get_json()
-        print('POST', data)
-
-    images = embedding_creator.compute_nns(**{k:v for k,v in session.items() if not k in ('_fresh', 'project')})
-
-    session['project'] = projectModel.name
-
-    return {'data': images, 'querySelection': dict(session)}
+    return {'data': images, 'querySelection': session.read()}
 
 
 @api.route('/embedders', methods=["GET", "POST"])
 def fetch_embedders():
     if request.method == 'POST':
-        POST = request.form
-        print('DATA', POST)
+        data = request.form
+        print('DATA', data)
 
-        project = Project(POST['name'])
+        project = Project(name=data['name'])
 
         # Handle url file
         url_file = request.files['file']
-        url_fpath = join(project.dirpath, f'{project.name}.csv')
+        url_fpath = join(project.get_path(), f'{project.name}.csv')
         url_file.save(url_fpath)
         url_file.close()
 
         with open(url_fpath, 'r') as csvUpload:
-            data = [ImageMetadata(**row) for row in csv.DictReader(csvUpload)]
+            project.data = [ImageMetadata(**row) for row in csv.DictReader(csvUpload)]
 
-        embedderConfigs = []
+        os.remove(url_fpath)
 
-        for embedder in json.loads(POST['embedders']):
-            embedderConfigs.append(Embedder(**embedder))
+        project.embedders = [Embedder(**embedder) for embedder in json.loads(data['embedders'])]
+        project.save()
 
-        projectModel = ProjectModel(name=project.name, data=data, embedders=embedderConfigs)
-        projectModel.save()
-
-        embedding_creator = EmbeddingCreator(projectId=projectModel.id)
+        embedding_creator = EmbeddingCreator(projectId=project.id)
         embedding_creator.extract_vectors()
         embedding_creator.build_annoy(n_trees=10)
-
 
     embedders = [EmbedderFactory.create(name) for name in EmbedderFactory.names]
 

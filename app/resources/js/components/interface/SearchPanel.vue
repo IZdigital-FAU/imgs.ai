@@ -6,7 +6,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="data" :options="metadata.projects" v-model="query.project"></b-form-select>
+            <b-form-select id="data" :options="getOptions(metadata.projects)" v-model="query.project" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -15,7 +15,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="embedders" :options="metadata.embedders" v-model="query.embedder" @change="update"></b-form-select>
+            <b-form-select id="embedders" :options="getOptions(metadata.embedders)" v-model="query.embedder" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -24,7 +24,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="ordering" :options="metadata.orderings" v-model="query.mode" @change="update"></b-form-select>
+            <b-form-select id="ordering" :options="getOptions(metadata.orderings)" v-model="query.mode" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -33,7 +33,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="distance" :options="metadata.distance_metrics" v-model="query.metric" @change="update"></b-form-select>
+            <b-form-select id="distance" :options="getOptions(metadata.distance_metrics)" v-model="query.metric" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -83,6 +83,10 @@ export default {
     methods: {
         update() {
             this.$emit('update')
+        },
+
+        getOptions(arr) {
+            return arr.map(name => ({text: name, value: name}))
         }
     }
 }

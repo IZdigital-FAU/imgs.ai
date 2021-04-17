@@ -3,7 +3,6 @@
 __pycache__/
 .vagrant/
 .vscode/
-models/
 Vagrantfile
 migrations/
 users.db

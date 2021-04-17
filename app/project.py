@@ -9,7 +9,7 @@ from env import Environment as environment
 import h5py
 import csv
 
-from .controllers.NearestNeighborOperator import NearestNeighborOperator
+from .scripts.NearestNeighborOperator import NearestNeighborOperator
 
 
 class Project:
@@ -18,17 +18,6 @@ class Project:
         self.name = name
         self.dirpath = join(environment.PROJECTS_DIR, name)
         new_dir(self.dirpath)
-
-    def __len__(self):
-        return self.config.model_len
-
-    def load(self):
-        # Load configuration
-        self.config.load(join(self.dirpath, 'config.json'))
-
-    def todict(self):
-        return {'name': self.name}
-
 
     def extend(self, files):
         # Load uploads file

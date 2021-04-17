@@ -121,8 +121,8 @@ export default {
         },
 
         update(){
-            this.querySelection.pos_idxs = this.positiveImages.map(img => img.id)
-            this.querySelection.neg_idxs = this.negativeImages.map(img => img.id)
+            this.querySelection.pos = this.positiveImages.map(img => img.id)
+            this.querySelection.neg = this.negativeImages.map(img => img.id)
 
             axios.post('api/images', this.querySelection)
                 .then(response => {

@@ -15,10 +15,10 @@ import numpy as np
 from annoy import AnnoyIndex
 
 from env import Environment as env
-from ..models.imagemetadata import Project
+from ..models.imagemetadata import Project, ImageMetadata
 
-from ..controllers.embedderFactory import EmbedderFactory
-from ..controllers.NearestNeighborOperator import NearestNeighborOperator
+from ..scripts.embedderFactory import EmbedderFactory
+from ..scripts.NearestNeighborOperator import NearestNeighborOperator
 
 
 class EmbeddingCreator:
@@ -40,8 +40,18 @@ class EmbeddingCreator:
             self.create_embedding_store()
 
 
+    def create_embedding_store(self):
+        # log.info("Creating embedding store + allocating space")
+        emb_store = h5py.File(self.embedding_store_fpath, 'w')
+
+        for name, embedder in self.embedders.items():
+            emb_store.create_dataset(name, (self.n_imgs, embedder.feature_length), compression="lzf")
+
+        emb_store.close()
+
+
     def extract_vectors(self):
-        img_vectors = h5py.File(self.embedding_store_fpath)
+        img_vectors = h5py.File(self.embedding_store_fpath, 'a')
 
         # Set up threading
         pbar_success = tqdm(total=self.n_imgs, desc="Embedded")
@@ -60,20 +70,21 @@ class EmbeddingCreator:
         # img I/O multithreading
         def _worker(item):
             i, item = item
-            img = image_from_url(item['url'])
+            img = image_from_url(item.url)
 
             with lock:
                 if img:
                     pbar_success.update(1)
-                    self.project.update(**{f'set__data__{i}__annId': i})
 
-                    for emb_type, embedder in self.embedders.items():
+                    self.project.update(**{f'set__data__{i}__is_stored': True})
+
+                    for name, embedder in self.embedders.items():
                         vector = embedder.transform(img, self.device)
 
                         if embedder.reducer:
                             vector = embedder.reducer.obj.fit_transform(vector)
 
-                        img_vectors[emb_type][i] = vector
+                        img_vectors[name][i] = vector
 
                 else:
                     print('FAILED IMG', item['url'])
@@ -99,14 +110,16 @@ class EmbeddingCreator:
                 dims = embedder.reducer.n_components
             else: dims = embedder.feature_length
 
+            self.project.reload()
+
+            stored = self.project.data.filter(is_stored=True)
+
             for metric in env.ANNOY_DISTANCE_METRICS:
                 ann = AnnoyIndex(dims, metric)
 
-                self.n_ok = len([d for d in self.project.data if d.annId])
-
-                for i in range(self.n_ok):
-                    self.project.objects
+                for i, item in enumerate(stored):
                     ann.add_item(i, emb_store[name][i])
+                
                 ann.build(n_trees)
 
                 hood_fname = f"{name}_{metric}.ann"
@@ -117,25 +130,17 @@ class EmbeddingCreator:
         emb_store.close()
 
 
-    def create_embedding_store(self):
-        # log.info("Creating embedding store + allocating space")
-        emb_store = h5py.File(self.embedding_store_fpath, 'a')
-
-        for name, embedder in self.embedders.items():
-            data = np.zeros((self.n_imgs, embedder.feature_length))
-            emb_store.create_dataset(name, compression="lzf", data=data)
-
-        emb_store.close()
-
-
     def compute_nns(self, embedder, pos, neg, n, metric, mode="ranking"):
         # If we have queries, search nearest neighbors, else display random data points
         # (ignore negative only examples, as results will be random anyway)
+        
+        stored = self.project.data.filter(is_stored=True)
+        
         n = int(n)
-        k = min(n, self.n_imgs, len([d for d in self.project.data if d.annId]))
+        k = min(n, self.n_imgs, len(stored))
 
         if not pos:
-            return sample([{'id': img.annId, 'url': img.url} for img in self.project.data if img.annId], k)
+            return sample([{'id': i, 'url': img.url} for i, img in enumerate(stored)], k)
 
         # Load neighborhood file
         hood_file = join(self.projectPath, f'{embedder}_{metric}.ann')
@@ -145,13 +150,9 @@ class EmbeddingCreator:
         ann = AnnoyIndex(dim, metric)
         ann.load(hood_file)
 
-        # Load uploads file
-        uploads_file = os.path.join(self.dirpath, "uploads.hdf5")
-        uploads = h5py.File(uploads_file, "a")
-
         nns = []
 
-        nnop = NearestNeighborOperator(ann, search_k, uploads, include_distances=1)
+        nnop = NearestNeighborOperator(ann, search_k=-1, include_distances=1)
 
         # Get nearest neighbors
         if pos and neg: nns = nnop.centroid(pos, neg, k)
@@ -160,10 +161,7 @@ class EmbeddingCreator:
         # Unload neighborhood file
         ann.unload()
 
-        for img in self.project.data.filter(addId=True):
-            print(img)
-
-        return nns
+        return [{'id': i, 'url': img.url} for i, img in enumerate(stored) if i in nns]
 
 
 def instantiate_embedders(project):
