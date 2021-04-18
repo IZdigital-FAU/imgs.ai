@@ -1,8 +1,7 @@
 from os.path import join, isfile
 from flask import Flask
-from flask_login import LoginManager, current_user, login_user, logout_user, login_required
-# from flask_cors import CORS
-from flask_bootstrap import Bootstrap
+from flask_login import LoginManager
+
 from env import Environment as environment
 from .project import Project
 
@@ -15,31 +14,35 @@ from .routes.views import view
 from flask import Blueprint
 
 from .session import CustomSessionInterface
+from .models.user import User
+
 
 # Start app
 app = Flask(__name__)
-app.session_interface = CustomSessionInterface()
+# app.session_interface = CustomSessionInterface()
 app.config.from_object(environment)
-
-# Session(app)
 
 db.init_app(app)
 
-app.register_blueprint(auth)
+app.register_blueprint(auth, url_prefix='/auth')
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(view)
 
 # Auth
-login_manager = LoginManager(app)  # Login
-login_manager.login_view = "login"
+login_manager = LoginManager()  # Login
+login_manager.login_view = 'auth.login'
 login_manager.login_message_category = "warning"
+
+login_manager.session_protection = "strong"
+
+login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return User.objects(pk=user_id).first()
 
-login_manager.blueprint_login_views = {
-    'auth': '/',
-    'api': '/api',
-    'view': '/',
-}
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store'
+    return response

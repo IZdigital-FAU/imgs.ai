@@ -1,29 +1,33 @@
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import db
+from datetime import datetime
+from logger import log
+
+from .. import db
 
 
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), index=True)
-    email = db.Column(db.String(120), index=True, unique=True)
-    password_hash = db.Column(db.String(128))
-    access = db.Column(db.Boolean())
+class User(UserMixin, db.Document):
+    name = db.StringField(required=True)
+    email = db.EmailField(required=True)
+    secret = db.StringField(required=True, min_length=80, max_length=80)
+    role = db.StringField(choices=['admin', 'user'])
+    created = db.DateTimeField()
+    last_login = db.DateTimeField()
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password, method="sha256")
+        self.secret = generate_password_hash(password, method="sha256")
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    def verify(self, secret):
+        return check_password_hash(self.secret, secret)
 
     def __repr__(self):
         return f"{self.username} ({self.email})"
 
 
 def create_user(form):
-    user = User(username=form.name.data, email=form.email.data, access=False)
-    user.set_password(form.password.data)
-    db.session.add(user)
-    db.session.commit()
+    user = User(name=form['name'], email=form['email'], role='user', created=datetime.now())
+    user.set_password(form['secret'])
+    user.save()
+
     return user

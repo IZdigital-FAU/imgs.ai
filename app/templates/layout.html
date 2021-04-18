@@ -20,17 +20,15 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-	<link rel="stylesheet" href="{{ url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap.min.css') }}">
 
-	<script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='vendor/js/jquery.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='vendor/js/bootstrap.bundle.min.js') }}"></script>
 
 	<title>imgs.ai</title>
 </head>
 
 <body>
-	{% include "navbar.html" %}
 	{% with messages = get_flashed_messages(with_categories=1) %}
 		{% for category, message in messages %}
 			<div class="alert alert-{{category}}">
@@ -39,8 +37,7 @@
 			</div>
 		{% endfor %}
 	{% endwith %}
-	{% from "bootstrap/form.html" import render_form, render_field %}
-		<div style="display:block; top:50%; right:50%; position:fixed; z-index: 999" class="spinner-border text-primary mx-auto" role="status" id="loading"></div>
+	<div style="display:block; top:50%; right:50%; position:fixed; z-index: 999" class="spinner-border text-primary mx-auto" role="status" id="loading"></div>
 	
 	<div style="opacity: .3" class="wrapper">{% block content %}{% endblock %}</div>
 </body>

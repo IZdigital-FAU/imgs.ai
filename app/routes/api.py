@@ -1,4 +1,5 @@
 from flask import Blueprint, request, session
+from flask_login import fresh_login_required
 
 from os.path import join
 import os
@@ -18,6 +19,7 @@ api = Blueprint('api', __name__)
 
 
 @api.route('/metadata', methods=['GET'])
+@fresh_login_required
 def get_metadata():
     return {
             'projects': [project.name for project in Project.objects()],
@@ -27,11 +29,13 @@ def get_metadata():
         }
 
 @api.route("/<idx>")
+@fresh_login_required
 def cdn(idx):
     return send_from_directory(root, path)
 
 
 @api.route('/images', methods=["GET", "POST"])
+@fresh_login_required
 def fetch_imgs():
     project = Project.objects().filter(name=session['project']).first()
     embedding_creator = EmbeddingCreator(project.id)
@@ -42,6 +46,7 @@ def fetch_imgs():
 
 
 @api.route('/embedders', methods=["GET", "POST"])
+@fresh_login_required
 def fetch_embedders():
     if request.method == 'POST':
         data = request.form
