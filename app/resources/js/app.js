@@ -10,10 +10,12 @@ import {routes} from './router'
 import Router from 'vue-router'
 Vue.use(Router)
 
-const router = new Router({routes})
+const router = new Router({
+    mode: 'history',
+    routes
+})
 
 import App from './components/App.vue'
-
 
 // Make BootstrapVue available throughout your project
 Vue.use(BootstrapVue)

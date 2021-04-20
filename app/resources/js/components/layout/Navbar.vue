@@ -3,12 +3,12 @@
         
         <b-avatar v-b-toggle.sidebar-1 variant="light" icon="list"></b-avatar>
         
-        <b-navbar-brand :to="'/'">imgs.ai</b-navbar-brand>
+        <b-navbar-brand :to="{name: 'home'}">imgs.ai</b-navbar-brand>
 
         <b-collapse id="nav-collapse" is-nav>
         <b-navbar-nav>
-            <b-nav-item :to="'interface'">Interface</b-nav-item>
-            <b-nav-item :to="'embedder'">Embedder</b-nav-item>
+            <b-nav-item :to="{name: 'interface'}">Interface</b-nav-item>
+            <b-nav-item :to="{name: 'embedder'}">Embedder</b-nav-item>
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->
@@ -25,7 +25,7 @@
 
             </b-nav-item-dropdown>
 
-            <b-nav-item :to="'help'">Help <b-icon icon="question-circle"></b-icon></b-nav-item>
+            <b-nav-item :to="{name: 'help'}">Help <b-icon icon="question-circle"></b-icon></b-nav-item>
 
         </b-navbar-nav>
         </b-collapse>

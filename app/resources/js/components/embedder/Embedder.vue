@@ -100,7 +100,8 @@ export default {
                 {text: 'PCA', value: 'pca'},
                 {text: 'TSNE', value: 'tsne'}
             ],
-            progress: []
+            progress: [],
+            csrf: document.querySelector('#csrf').value
         }
     },
 
@@ -108,12 +109,6 @@ export default {
         await axios.get('api/embedders').then(response => {
             this.embedders = response.data.data
         })
-
-        var evtSource = new EventSource('/api/progress')
-
-        evtSource.onmessage = function(e) {
-            this.progress.push(e.data)
-        }
     },
 
     computed: {
@@ -136,8 +131,6 @@ export default {
                         reducer: embedder.reducer.active ? {name: embedder.reducer.name, params: reducerParams} : null}
             })
 
-            console.log('Result', result)
-
             return result
         }
     },
@@ -152,7 +145,8 @@ export default {
             data.append('file', this.model.file)
             data.append('embedders', JSON.stringify(this.selectedEmbedders))
 
-            axios.post('api/embedders', data)
+            axios.post('api/embedders', data, {headers: {"X-CSRFToken": this.csrf}}
+            )
         },
 
         addReducer: embedder => embedder.reducer.active = true,

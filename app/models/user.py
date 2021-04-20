@@ -6,12 +6,17 @@ from logger import log
 
 from .. import db
 
+from .imagemetadata import Project
+
 
 class User(UserMixin, db.Document):
     name = db.StringField(required=True)
     email = db.EmailField(required=True)
     secret = db.StringField(required=True, min_length=80, max_length=80)
     role = db.StringField(choices=['admin', 'user'])
+
+    projects = db.ListField(db.ReferenceField(Project))
+
     created = db.DateTimeField()
     last_login = db.DateTimeField()
 

@@ -6,6 +6,7 @@ from ..models.user import User, create_user
 from logger import log
 from datetime import datetime
 
+
 auth = Blueprint('auth', __name__)
 
 
@@ -54,4 +55,5 @@ def login():
 def logout():
     logout_user()
     session.clear()
+    print(session)
     return redirect(url_for("auth.login"))

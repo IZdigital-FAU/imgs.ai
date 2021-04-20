@@ -79,3 +79,28 @@ def fetch_embedders():
     }
 
     return payload
+
+
+@api.route('/projects', methods=["GET", "POST"])
+@fresh_login_required
+def handle_projects():
+    projects = [
+                    {
+                        'id': str(project.id),
+                        'name': project.name,
+                        'nimgs': project.data.count()
+                    }
+                
+                for project in Project.objects().all()]
+
+    return json.dumps(projects)
+
+
+@api.route('/project/<pid>', methods=["GET", "POST"])
+@fresh_login_required
+def get_project_data(pid):
+    print('PROJECT', pid)
+
+    project = Project.objects(pk=pid).first()
+
+    return json.dumps([img.to_json() for img in project.data])

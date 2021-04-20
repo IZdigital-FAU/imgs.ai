@@ -29,4 +29,6 @@ class Environment(object):
     DEFAULT_MODE = "ranking"
     
     SESSION_COOKIE_SECURE = True # Activate in production
-    REMEMBER_COOKIE_SECURE = True # Activate in production
+    REMEMBER_COOKIE_SECURE = False # Activate in production
+
+    SESSION_COOKIE_SAMESITE = 'Strict'
