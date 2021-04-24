@@ -82,7 +82,9 @@ export default {
             gutter: 10
         });
 
-        window.dispatchEvent(new Event('resize'));
+        this.$nextTick(function () {
+            window.dispatchEvent(new Event('resize'));
+        })
     },
 
     activated() {

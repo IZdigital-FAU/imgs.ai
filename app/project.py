@@ -16,7 +16,7 @@ class Project:
 
     def __init__(self, name):
         self.name = name
-        self.dirpath = join(environment.PROJECTS_DIR, name)
+        self.dirpath = join(environment.PROJECT_DATA_DIR, name)
         new_dir(self.dirpath)
 
     def extend(self, files):

@@ -8,7 +8,7 @@
             </template>
 
             <b-list-group flush>
-                <b-list-group-item v-for="project in projects" v-bind:key="project.name" class="d-flex justify-content-between align-items-center">
+                <b-list-group-item v-for="project in projects" v-bind:key="project.name" :to="{name: 'project.show', params: project}" class="d-flex justify-content-between align-items-center">
                     {{project.name}}
                     <b-badge variant="primary" pill>{{project.nimgs}}</b-badge>
                 </b-list-group-item>

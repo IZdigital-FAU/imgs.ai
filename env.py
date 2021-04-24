@@ -16,8 +16,8 @@ class Environment(object):
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADS_PATH = f"/home/{username}/imgs.ai/uploads"  # Absolute
-    PROJECTS_DIR = f"/home/{username}/projects"  # Absolute
-    PROJECTS = [f.name for f in os.scandir(PROJECTS_DIR) if f.is_dir()]
+    PROJECT_DATA_DIR = os.path.abspath('./data')
+    PROJECTS = [f.name for f in os.scandir(PROJECT_DATA_DIR) if f.is_dir()]
 
     ANNOY_DISTANCE_METRICS = ["angular", "euclidean", "manhattan", "hamming", "dot"] # https://github.com/spotify/annoy#full-python-api
 

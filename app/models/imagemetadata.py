@@ -5,8 +5,7 @@ from util import new_dir
 
 
 class ImageMetadata(db.DynamicEmbeddedDocument):
-    url = db.URLField(unique=1)
-    is_stored = db.BooleanField(default=False)
+    pass
 
 class Reducer(db.EmbeddedDocument):
     name = db.StringField()
@@ -19,10 +18,11 @@ class Embedder(db.EmbeddedDocument):
 
 class Project(db.Document):
     name = db.StringField(unique=1, required=1)
+    # category = db.ListField()
     data = db.EmbeddedDocumentListField(ImageMetadata)
     embedders = db.EmbeddedDocumentListField(Embedder)
 
     def get_path(self):
-        path = join(env.PROJECTS_DIR, self.name)
+        path = join(env.PROJECT_DATA_DIR, self.name)
         new_dir(path)
         return path

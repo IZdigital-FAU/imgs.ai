@@ -1,14 +1,14 @@
 <template>
     <b-navbar toggleable="lg" type="dark" variant="info">
         
-        <b-avatar v-b-toggle.sidebar-1 variant="light" icon="list" class="mr-2"></b-avatar>
+        <b-avatar v-b-toggle.sidebar-1 variant="light" icon="list" class="mr-5"></b-avatar>
         
         <b-navbar-brand :to="{name: 'home'}">imgs.ai</b-navbar-brand>
 
         <b-collapse id="nav-collapse" is-nav>
         <b-navbar-nav>
             <b-nav-item :to="{name: 'interface'}">Interface</b-nav-item>
-            <b-nav-item :to="{name: 'embedder'}">Embedder</b-nav-item>
+            <b-nav-item :to="{name: 'projects.index'}">Projects</b-nav-item>
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->

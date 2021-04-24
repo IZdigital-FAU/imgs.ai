@@ -7,9 +7,10 @@ class QuerySelection:
 
     def __init__(self):
         project = Project.objects().first()
+        embedder = project.embedders.first()
 
         self.project = project.name
-        self.embedder = project.embedders.first().name
+        self.embedder = embedder.name if embedder else None
         self.pos = []
         self.neg = []
         self.n = 30

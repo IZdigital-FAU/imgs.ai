@@ -1,86 +1,66 @@
 <template>
-    <b-jumbotron header="Embedder" lead="Vectorize your images">
-        <b-form @submit="post">
-            <b-row>
-                <b-col>
-                    <b-form-group
-                        id="name"
-                        label="Collection name:"
-                        label-for="name"
-                        description="Give your image collection a suggestive name"
-                    >
-                        <b-form-input v-model="model.name" placeholder="my_image_collection" required id="name"></b-form-input>
-                    </b-form-group>
-                </b-col>
-                <b-col>
-                    <b-form-group
-                        id="file"
-                        label="Upload .csv:"
-                        label-for="fileInput"
-                        description="Upload image collection">
-                        
-                        <b-form-file id="fileInput" required
-                            v-model="model.file"
-                            :state="Boolean(model.file)"
-                            placeholder="Choose a file or drop it here..."
-                            drop-placeholder="Drop file here..."
-                            v-b-tooltip.hover title="csv or line separated image URLs"
-                        ></b-form-file>
-                    </b-form-group>
-                </b-col>
-            </b-row>
+    <b-container class="embedder">
 
-            <b-list-group>
-                
-                <b-list-group-item v-for="embedder in embedders" v-bind:key="embedder.id">
-                    <b-form-checkbox v-model="embedder.active" switch>{{embedder.name}}</b-form-checkbox>
-                    <b-collapse :visible="embedder.active" :id="embedder.name">
-                        <b-row>
-                            <b-col>
-                                <b-card>
-                                    <b-input-group :prepend="param" v-for="(value, param) in embedder.params" v-bind:key="param.name">
-                                        <b-form-input :id="param" :type="embedder.params[param].input_type"
-                                                    :min="embedder.params[param].meta.minVal" :max="embedder.params[param].meta.maxVal" :step="embedder.params[param].meta.step"
-                                                    v-model="embedder.params[param].value"></b-form-input>
-                                        <b-input-group-append is-text class="text-monospace">{{ embedder.params[param].value }}</b-input-group-append>
+        <h4>
+            <b-badge v-for="embedder in embedders"
+                    @dragstart="dragStart"
+                    @drag="dragging"
+                    :draggable="true"
+                    :id="embedder.name"
+                    variant="primary" class="mr-2">{{embedder.name}}
+            </b-badge>
+        </h4>
+
+        <b-card no-body @drop="drop" @dragover="allowDrop">
+            <b-tabs card>
+                <!-- Render Tabs, supply a unique `key` to each tab -->
+                <b-tab v-for="emb in tabs" :key="emb.name" :title="emb.name" :active="isLast(emb.name)">
+
+                    <template #title>
+                        {{emb.name}} <b-icon icon="x" class="ml-2" @click="closeTab(emb.name)"></b-icon>
+                    </template>
+
+                    <b-input-group :prepend="param" v-for="(value, param) in emb.params" v-bind:key="param.name" class="mb-1">
+                        <b-form-input :id="param" :type="emb.params[param].input_type"
+                                    :min="emb.params[param].meta.minVal" :max="emb.params[param].meta.maxVal" :step="emb.params[param].meta.step"
+                                    v-model="emb.params[param].value">
+                        </b-form-input>
+                        <b-input-group-append is-text class="text-monospace">{{ emb.params[param].value }}</b-input-group-append>
+                    </b-input-group>
+
+                    <b-card no-body class="mt-5">
+                        <b-tabs pills card vertical>
+                            <b-tab v-for="reducer in reducers" :title="reducer" active>
+                                <b-card-text>
+                                    <b-input-group :prepend="param" v-for="(value, param) in emb.reducer.params" v-bind:key="param.name">
+                                        <b-form-input :id="param" :type="emb.reducer.params[param].input_type"
+                                                    :min="emb.reducer.params[param].meta.minVal" :max="emb.reducer.params[param].meta.maxVal" :step="emb.reducer.params[param].meta.step"
+                                                    v-model="emb.reducer.params[param].value"></b-form-input>
+                                        <b-input-group-append is-text class="text-monospace">{{ emb.reducer.params[param].value }}</b-input-group-append>
                                     </b-input-group>
-                                </b-card>
-                            </b-col>
-                            <b-col>
-                                <b-button variant="outline-success" v-if="!embedder.reducer.active" @click="addReducer(embedder)">
-                                    <b-icon icon="plus-circle"></b-icon> Add dimensionality reduction
-                                </b-button>
 
-                                <div v-else>
-                                    <b-card>
-                                        <b-input-group prepend="Reducer">
-                                            <b-form-select v-model="embedder.reducer.name" :options="reducerOptions">
-                                                <template #first><b-form-select-option :value="null" disabled>-- Please select a reducer --</b-form-select-option></template>
-                                            </b-form-select>
-                                            
-                                            <b-input-group :prepend="param" v-for="(value, param) in embedder.reducer.params" v-bind:key="param.name">
-                                                <b-form-input :id="param" :type="embedder.reducer.params[param].input_type"
-                                                            :min="embedder.reducer.params[param].meta.minVal" :max="embedder.reducer.params[param].meta.maxVal" :step="embedder.reducer.params[param].meta.step"
-                                                            v-model="embedder.reducer.params[param].value"></b-form-input>
-                                                <b-input-group-append is-text class="text-monospace">{{ embedder.reducer.params[param].value }}</b-input-group-append>
-                                            </b-input-group>
-                                        </b-input-group>
-                                    </b-card>
+                                </b-card-text>
+                            </b-tab>
+                        </b-tabs>
+                     </b-card>
+                </b-tab>
 
-                                    <b-button variant="outline-danger" @click="removeReducer(embedder)">
-                                        <b-icon icon="x-circle"></b-icon> Remove dimensionality reduction
-                                    </b-button>
-                                </div>
-                            </b-col>
-                        </b-row>
-                    </b-collapse>
-                </b-list-group-item>
+                <template #empty>
+                    <div class="text-center text-muted">
+                        There are no embedders attached 🤷<br>
+                        Add one by dragging the above badges here.
+                    </div>
+                </template>
+            </b-tabs>
+        </b-card>
+        
+        <b-row>
+            <b-col></b-col>
+            <b-col><b-button variant="outline-primary" center>🚀 Launch</b-button></b-col>
+            <b-col></b-col>
+        </b-row>
 
-            </b-list-group>
-
-            <b-button type="submit" variant="outline-primary">Embed</b-button>
-        </b-form>
-    </b-jumbotron>
+    </b-container>
 </template>
 
 <script>
@@ -96,11 +76,11 @@ export default {
                 name: '',
                 file: null
             },
-            reducerOptions: [
-                {text: 'PCA', value: 'pca'},
-                {text: 'TSNE', value: 'tsne'}
-            ],
-            progress: [],
+
+            tabs: [],
+            tabCounter: 0,
+
+            reducers: ['PCA', 'TSNE'],
             csrf: document.querySelector('#csrf').value
         }
     },
@@ -150,7 +130,48 @@ export default {
         },
 
         addReducer: embedder => embedder.reducer.active = true,
-        removeReducer: embedder => embedder.reducer.active = false
+        removeReducer: embedder => embedder.reducer.active = false,
+
+        closeTab(name) {
+            let idx = this.tabs.map(emb => emb.name).indexOf(name);
+            this.tabs.splice(idx, 1)
+        },
+        newTab(name) {
+            if (this.tabs.map(emb => emb.name).includes(name)) return
+            let embedder = this.embedders.find(emb => emb.name === name)
+            this.tabs.push(embedder)
+        },
+
+        isLast(name) {
+            return this.tabs.map(emb => emb.name).indexOf(name) === this.tabs.length - 1
+        },
+
+        dragStart(event) {
+            event.dataTransfer.setData('name', event.target.id);
+        },
+
+        dragging:function(event) {
+            event.preventDefault();
+        },
+
+        drop(event) {
+            event.preventDefault();
+            let name = event.dataTransfer.getData('name');
+            
+            this.newTab(name);
+
+        },
+
+        allowDrop(event) {
+            event.preventDefault();
+        }
     }
 }
 </script>
+
+<style scoped>
+    .embedder {
+        position: fixed;
+        width: 45vw;
+    }
+</style>

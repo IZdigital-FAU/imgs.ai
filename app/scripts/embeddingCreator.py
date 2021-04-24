@@ -29,7 +29,7 @@ class EmbeddingCreator:
         self.num_workers = num_workers
 
         self.project = Project.objects(id=projectId).first()
-        self.projectPath = join(env.PROJECTS_DIR, self.project.name)
+        self.projectPath = join(env.PROJECT_DATA_DIR, self.project.name)
 
         self.n_imgs = len(self.project.data)
 

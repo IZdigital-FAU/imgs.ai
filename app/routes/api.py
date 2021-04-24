@@ -1,4 +1,4 @@
-from flask import Blueprint, request, session
+from flask import Blueprint, request, session, send_from_directory
 from flask_login import fresh_login_required
 
 from os.path import join
@@ -30,10 +30,15 @@ def get_metadata():
             'distance_metrics': env.ANNOY_DISTANCE_METRICS
         }
 
-@api.route("/<idx>")
+@api.route("/<pid>/<img>")
 @fresh_login_required
-def cdn(idx):
-    return send_from_directory(root, path)
+def cdn(pid, img):
+    project = Project.objects(pk=pid).first()
+    PATH = join(env.PROJECT_DATA_DIR, project.name)
+
+    print(project, PATH)
+
+    return send_from_directory(PATH, img)
 
 
 @api.route('/images', methods=["GET", "POST"])
@@ -41,8 +46,7 @@ def cdn(idx):
 def fetch_imgs():
     query = QuerySelection()
 
-    if request.method == 'POST':
-        query.set(**request.get_json())
+    if request.method == 'POST': query.set(**request.get_json())
     
     project = Project.objects().filter(name=query.project).first()
     embedding_creator = EmbeddingCreator(project.id)
@@ -110,4 +114,12 @@ def get_project_data(pid):
 
     project = Project.objects(pk=pid).first()
 
-    return {'data': [{'url': img.url, 'is_stored': img.is_stored} for img in project.data], 'name': project.name}
+    total = project.data.count()
+
+    per_page = 10
+
+    start = (int(request.args.get('page')) - 1) * per_page
+
+    end = min(start + per_page, total)
+
+    return {'data': [json.loads(img.to_json()) for img in project.data[start:end]], 'name': project.name, 'total': total, 'per_page': per_page}

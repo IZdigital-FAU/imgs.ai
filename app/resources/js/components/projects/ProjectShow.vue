@@ -1,6 +1,7 @@
 <template>
     <b-jumbotron :header="model.name">
-                
+        <b-row>
+            <b-col>
                 <b-table hover :busy="loading"
                     :items="imgs"
                     :fields="fields"
@@ -9,20 +10,20 @@
                     @row-selected="onRowSelected"
                     :tbody-transition-props="transProps">
 
-                    <template #cell(url)="{ item, rowSelected }">
+                    <template #cell(name)="{ item, rowSelected }">
                         <template v-if="rowSelected">
-                            <span aria-hidden="true">✅</span> {{item.url}}
+                            <span aria-hidden="true">✅</span> {{item.name}}
                             <span class="sr-only">Selected</span>
                         </template>
                         <template v-else>
-                            <span aria-hidden="true">&nbsp;</span> {{item.url}}
+                            <span aria-hidden="true">&nbsp;</span> {{item.name}}
                             <span class="sr-only">Not selected</span>
                         </template>
                     </template>
 
                     <template #cell(actions)="row">
                         <b-button variant="outline-info" size="sm" @click="row.toggleDetails" class="mr-2">
-                            <b-icon :icon="row.detailsShowing ? 'x-circle' : 'search'"></b-icon>
+                            <b-icon :icon="row.detailsShowing ? 'chevron-up' : 'search'"></b-icon>
                         </b-button>
 
                         <b-button variant="outline-warning" size="sm" @click="" class="mr-2">
@@ -35,19 +36,41 @@
                     </template>
 
                     <template #row-details="row">
-                        <b-img :src="row.item.url" fluid center></b-img>
+                        <b-img :src="getImg(row.item.name)" width="300" fluid center></b-img>
                     </template>
 
                 </b-table>
 
+                <b-pagination @page-click="getPage" v-model="currentPage"
+                            :per-page="per_page" :total-rows="total"
+                            first-text="⏮" last-text="⏭"
+                            pills align="center">
+
+                    <template #prev-text>
+                        <b-icon icon="chevron-left"></b-icon>
+                    </template>
+
+                    <template #next-text>
+                        <b-icon icon="chevron-right"></b-icon>
+                    </template>
+
+                </b-pagination>
+            </b-col>
+            <b-col>
+                <Embedder></Embedder>
+            </b-col>
+        </b-row>
     </b-jumbotron>
 </template>
 
 <script>
 import axios from 'axios'
 
+import Embedder from '../embedder/Embedder.vue'
+
 export default {
     name: 'ProjectShow',
+    components: {Embedder},
 
     data() {
         return {
@@ -55,7 +78,7 @@ export default {
             imgs: [],
 
             fields: [
-                {key: 'url', label: 'src'},
+                {key: 'name', sortable: true},
                 {key: 'actions', label: 'actions'}
             ],
 
@@ -68,6 +91,10 @@ export default {
                 name: 'flip-list'
             },
 
+            currentPage: 1,
+            total: 0,
+            per_page: 0,
+
             csrf: document.querySelector('#csrf').value
         }
     },
@@ -75,18 +102,7 @@ export default {
     activated() {
         this.model = this.$route.params
 
-        axios.get(`/api/project/${this.model.id}`).then(resp => {
-            let data = resp.data.data
-
-            data.forEach((img, i) => {
-                if (!img.is_stored) data[i]._rowVariant = 'danger'
-            })
-
-            this.imgs = data;
-
-            this.model.name = resp.data.name
-            this.loading = false;
-        })
+        this.getPage({}, 1)
 
         console.log('imgs', this.imgs)
 
@@ -108,6 +124,27 @@ export default {
         onRowSelected(items) {
             this.selected = items
         },
+
+        getPage(event, page) {
+            axios.get(`/api/project/${this.model.id}`, { params: { page: page } }).then(resp => {
+                let data = resp.data.data
+
+                // data.forEach((img, i) => {
+                //     if (!img.is_stored) data[i]._rowVariant = 'danger'
+                // })
+
+                this.imgs = data;
+
+                this.total = resp.data.total
+                this.per_page = resp.data.per_page
+                this.model.name = resp.data.name
+                this.loading = false;
+            })
+        },
+
+        getImg(name) {
+            return `/api/${this.model.id}/${name}`
+        }
     }
 }
 </script>
