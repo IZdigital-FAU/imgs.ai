@@ -1,7 +1,7 @@
 <template>
     <b-navbar toggleable="lg" type="dark" variant="info">
         
-        <b-avatar v-b-toggle.sidebar-1 variant="light" icon="list"></b-avatar>
+        <b-avatar v-b-toggle.sidebar-1 variant="light" icon="list" class="mr-2"></b-avatar>
         
         <b-navbar-brand :to="{name: 'home'}">imgs.ai</b-navbar-brand>
 

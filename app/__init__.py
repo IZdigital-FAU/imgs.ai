@@ -34,14 +34,13 @@ login_manager = LoginManager()  # Login
 login_manager.login_view = 'auth.login'
 login_manager.login_message_category = "warning"
 
-login_manager.session_protection = "basic"
+login_manager.session_protection = None # https://flask-login.readthedocs.io/en/latest/#session-protection
 
 login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.objects(pk=user_id).first()
-
 
 @app.before_request
 def test():
@@ -50,4 +49,5 @@ def test():
 @app.after_request
 def add_header(response):
     response.headers['Cache-Control'] = 'no-cache, no-store'
+    print(response.headers.__dict__)
     return response

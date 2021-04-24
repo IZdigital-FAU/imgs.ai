@@ -14,6 +14,8 @@ from ..scripts.embedderFactory import EmbedderFactory
 
 from ..models.imagemetadata import Project, ImageMetadata, Embedder, Reducer
 
+from ..scripts.querySelection import QuerySelection
+
 
 api = Blueprint('api', __name__)
 
@@ -37,12 +39,17 @@ def cdn(idx):
 @api.route('/images', methods=["GET", "POST"])
 @fresh_login_required
 def fetch_imgs():
-    project = Project.objects().filter(name=session['project']).first()
+    query = QuerySelection()
+
+    if request.method == 'POST':
+        query.set(**request.get_json())
+    
+    project = Project.objects().filter(name=query.project).first()
     embedding_creator = EmbeddingCreator(project.id)
 
-    images = embedding_creator.compute_nns(**{k:v for k,v in session.items() if k != 'project'})
+    images = embedding_creator.compute_nns(**{k:v for k,v in query.get().items() if k != 'project'})
 
-    return {'data': images, 'querySelection': session.read()}
+    return {'data': images, 'querySelection': query.get()}
 
 
 @api.route('/embedders', methods=["GET", "POST"])
@@ -103,4 +110,4 @@ def get_project_data(pid):
 
     project = Project.objects(pk=pid).first()
 
-    return json.dumps([img.to_json() for img in project.data])
+    return {'data': [{'url': img.url, 'is_stored': img.is_stored} for img in project.data], 'name': project.name}

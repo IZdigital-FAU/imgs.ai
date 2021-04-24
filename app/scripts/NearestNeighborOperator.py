@@ -1,6 +1,7 @@
 from collections import defaultdict
 from util import sort_dict
 
+import numpy as np
 
 class NearestNeighborOperator:
 

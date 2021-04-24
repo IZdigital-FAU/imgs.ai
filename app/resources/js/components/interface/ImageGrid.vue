@@ -47,7 +47,7 @@
 <script>
 import axios from 'axios'
 
-var Masonry = require('masonry-layout');
+var Packery = require('packery');
 
 import SearchPanel from './SearchPanel.vue'
 import CarouselModal from './CarouselModal.vue'
@@ -64,10 +64,10 @@ export default {
         negativeImages: [],
 
         querySelection: {},
-
-        msnry: {},
         
-        slide: 0
+        slide: 0,
+
+        csrf: document.querySelector('#csrf').value
     }),
 
     async created() {
@@ -76,16 +76,17 @@ export default {
             this.querySelection = response.data.querySelection
         })
 
-        this.msnry = new Masonry(this.$refs.grid, {
-            itemSelector: '.grid-item-item',
-            columnWidth: 10
+        let pckry = new Packery(this.$refs.grid, {
+            itemSelector: '.grid-item-img',
+            // columnWidth: 10,
+            gutter: 10
         });
 
-        console.log('my masonry:', this.msnry.items.map(i => i.element))
+        window.dispatchEvent(new Event('resize'));
+    },
 
-        this.msnry.on( 'layoutComplete', function( items ) {
-            console.log('layoutComplete', items.length );
-        });
+    activated() {
+        window.dispatchEvent(new Event('resize'));
     },
 
     methods: {
@@ -124,11 +125,15 @@ export default {
             this.querySelection.pos = this.positiveImages.map(img => img.id)
             this.querySelection.neg = this.negativeImages.map(img => img.id)
 
-            axios.post('api/images', this.querySelection)
+            axios.post('api/images', this.querySelection, {headers: {"X-CSRFToken": this.csrf}})
                 .then(response => {
                     this.imgs = response.data.data.filter(item => !this.positiveImages.map(o => o.id).includes(item.id) && !this.negativeImages.map(o => o.id).includes(item.id))
                     this.querySelection = response.data.querySelection
                 })
+
+            var evt = window.document.createEvent('UIEvents'); 
+            evt.initUIEvent('resize', true, false, window, 0); 
+            window.dispatchEvent(evt);
         },
 
         remove() {
