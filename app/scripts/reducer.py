@@ -6,16 +6,13 @@ from sklearn.manifold import TSNE
 
 
 class Reducer(ObjectOperator):
-    def __init__(self, params=ParameterCollection.get('n_components')):
+    def __init__(self, name, params=ParameterCollection.get('n_components')):
         super().__init__(params)
-        self.active = False
+        self.name = name
         self.obj = None
 
-    def __bool__(self):
-        return self.active
-
     def make_payload(self):
-        return {'name': None, 'params': {name: obj.__dict__ for name, obj in self.params.items()}, 'active': self.active}
+        return {'name': self.name, 'params': {name: obj.__dict__ for name, obj in self.params.items()}}
 
     def be(self, algo, params):
         self.obj = ReducerFactory.create(algo, params)

@@ -16,6 +16,9 @@ class Embedder(db.EmbeddedDocument):
     params = db.DictField()
     reducer = db.EmbeddedDocumentField(Reducer)
 
+    def hasReducer(self):
+        return bool(self.reducer)
+
 class Project(db.Document):
     name = db.StringField(unique=1, required=1)
     # category = db.ListField()

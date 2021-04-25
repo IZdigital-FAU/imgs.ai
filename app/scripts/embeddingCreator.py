@@ -3,12 +3,15 @@ import h5py
 from tqdm import tqdm
 from os.path import isfile, join
 import os
+from os import listdir
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 import pickle
 import json
 import signal
 import sys
+
+import PIL.Image
 
 from random import sample
 import numpy as np
@@ -28,13 +31,17 @@ class EmbeddingCreator:
 
         self.num_workers = num_workers
 
-        self.project = Project.objects(id=projectId).first()
-        self.projectPath = join(env.PROJECT_DATA_DIR, self.project.name)
+        self.project = Project.objects(pk=projectId).first()
+        self.vectorsPath = join(env.VECTORS_DIR, self.project.name)
+
+        print('PROJECT EMBEDDERS', self.project.embedders)
+
+        new_dir(self.vectorsPath)
 
         self.n_imgs = len(self.project.data)
 
         self.embedders = instantiate_embedders(self.project)
-        self.embedding_store_fpath = join(self.projectPath, 'embedding_store.hdf5')
+        self.embedding_store_fpath = join(self.vectorsPath, 'embedding_store.hdf5')
 
         if not isfile(self.embedding_store_fpath):
             self.create_embedding_store()
@@ -52,52 +59,24 @@ class EmbeddingCreator:
 
     def extract_vectors(self):
         img_vectors = h5py.File(self.embedding_store_fpath, 'a')
+        
+        PATH = self.project.get_path()
 
-        # Set up threading
-        pbar_success = tqdm(total=self.n_imgs, desc="Embedded")
-        pbar_failure = tqdm(total=self.n_imgs, desc="Failed")
+        for img_fname in listdir(PATH):
+            img = PIL.Image.open(join(PATH, img_fname)).convert("RGB")
 
-        lock = Lock()
+            for name, embedder in self.embedders.items():
+                vector = embedder.transform(img, self.device)
 
-        # Catch interruptions to be able to close file
-        def signal_handler(sig, frame):
-            log.info("Shutting down gracefully...")
-            img_vectors.close()
-            sys.exit(0)
+                if embedder.reducer:
+                    vector = embedder.reducer.obj.fit_transform(vector)
 
-        signal.signal(signal.SIGINT, signal_handler)
+                img_vectors[name][i] = vector
+            break
 
-        # img I/O multithreading
-        def _worker(item):
-            i, item = item
-            img = image_from_url(item.url)
-
-            with lock:
-                if img:
-                    pbar_success.update(1)
-
-                    self.project.update(**{f'set__data__{i}__is_stored': True})
-
-                    for name, embedder in self.embedders.items():
-                        vector = embedder.transform(img, self.device)
-
-                        if embedder.reducer:
-                            vector = embedder.reducer.obj.fit_transform(vector)
-
-                        img_vectors[name][i] = vector
-
-                else:
-                    print('FAILED IMG', item['url'])
-                    pbar_failure.update(1)
-
-        with ThreadPoolExecutor(self.num_workers) as executor:
-            # log.debug(f'Multithreading on {executor._max_workers} workers')
-            executor.map(_worker, enumerate(self.project.data))
-
-        # Cleanup
-        pbar_success.close()
-        pbar_failure.close()
         img_vectors.close()
+
+        print(self.embedders)
 
 
     def build_annoy(self, n_trees):
@@ -123,7 +102,7 @@ class EmbeddingCreator:
                 ann.build(n_trees)
 
                 hood_fname = f"{name}_{metric}.ann"
-                hood_file = join(self.projectPath, hood_fname)
+                hood_file = join(self.vectorsPath, hood_fname)
                 ann.save(hood_file)
 
         # Cleanup
@@ -143,7 +122,7 @@ class EmbeddingCreator:
             return sample([{'id': i, 'url': img.url} for i, img in enumerate(stored)], k)
 
         # Load neighborhood file
-        hood_file = join(self.projectPath, f'{embedder}_{metric}.ann')
+        hood_file = join(self.vectorsPath, f'{embedder}_{metric}.ann')
 
         dim = self.embedders[embedder].reducer.n_components if self.embedders[embedder].reducer else self.embedders[embedder].feature_length
 
@@ -167,17 +146,71 @@ class EmbeddingCreator:
 def instantiate_embedders(project):
     embedders = {}
 
+    print('instantiate embedders', project.embedders)
+
     for embedder in project.embedders:
         name = embedder['name']
         params = embedder['params']
 
-        embedders[embedder.name] = EmbedderFactory.create(embedder.name)
+        embedders[name] = EmbedderFactory.create(name)
 
         for param in params:
             embedders[name].set_param(param, params[param])
 
-        if embedder['reducer']:
-            embedders[name].reducer.active = True
+        if embedder.hasReducer():
+            # embedders[name].reducer.active = True
             embedders[name].reducer.be(embedder['reducer']['name'], embedder['reducer']['params'])
 
     return embedders
+
+
+"""
+def multithread_io():
+    img_vectors = h5py.File(self.embedding_store_fpath, 'a')
+
+    # Set up threading
+    pbar_success = tqdm(total=self.n_imgs, desc="Embedded")
+    pbar_failure = tqdm(total=self.n_imgs, desc="Failed")
+
+    lock = Lock()
+
+    # Catch interruptions to be able to close file
+    def signal_handler(sig, frame):
+        log.info("Shutting down gracefully...")
+        img_vectors.close()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # img I/O multithreading
+    def _worker(item):
+        i, item = item
+        img = image_from_url(item.url)
+
+        with lock:
+            if img:
+                pbar_success.update(1)
+
+                self.project.update(**{f'set__data__{i}__is_stored': True})
+
+                for name, embedder in self.embedders.items():
+                    vector = embedder.transform(img, self.device)
+
+                    if embedder.reducer:
+                        vector = embedder.reducer.obj.fit_transform(vector)
+
+                    img_vectors[name][i] = vector
+
+            else:
+                print('FAILED IMG', item['url'])
+                pbar_failure.update(1)
+
+    with ThreadPoolExecutor(self.num_workers) as executor:
+        # log.debug(f'Multithreading on {executor._max_workers} workers')
+        executor.map(_worker, enumerate(self.project.data))
+
+    # Cleanup
+    pbar_success.close()
+    pbar_failure.close()
+    img_vectors.close()
+"""

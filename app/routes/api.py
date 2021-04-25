@@ -1,4 +1,4 @@
-from flask import Blueprint, request, session, send_from_directory
+from flask import Blueprint, request, session, send_from_directory, redirect, url_for
 from flask_login import fresh_login_required
 
 from os.path import join
@@ -12,7 +12,12 @@ from env import Environment as env
 from ..scripts.embeddingCreator import EmbeddingCreator
 from ..scripts.embedderFactory import EmbedderFactory
 
-from ..models.imagemetadata import Project, ImageMetadata, Embedder, Reducer
+from ..models.imagemetadata import Project, ImageMetadata, Embedder
+
+from ..queue import q, conn
+from rq.job import Job
+
+from ..scripts.reducer import Reducer
 
 from ..scripts.querySelection import QuerySelection
 
@@ -56,41 +61,80 @@ def fetch_imgs():
     return {'data': images, 'querySelection': query.get()}
 
 
-@api.route('/embedders', methods=["GET", "POST"])
+@api.route('/embedders', methods=['GET'])
 @fresh_login_required
-def fetch_embedders():
-    if request.method == 'POST':
-        data = request.form
-        print('DATA', data)
-
-        project = Project(name=data['name'])
-
-        # Handle url file
-        url_file = request.files['file']
-        url_fpath = join(project.get_path(), f'{project.name}.csv')
-        url_file.save(url_fpath)
-        url_file.close()
-
-        with open(url_fpath, 'r') as csvUpload:
-            project.data = [ImageMetadata(**row) for row in csv.DictReader(csvUpload)]
-
-        os.remove(url_fpath)
-
-        project.embedders = [Embedder(**embedder) for embedder in json.loads(data['embedders'])]
-        project.save()
-
-        embedding_creator = EmbeddingCreator(projectId=project.id)
-        embedding_creator.extract_vectors()
-        embedding_creator.build_annoy(n_trees=10)
-
+def generic_embedders():
     embedders = [EmbedderFactory.create(name) for name in EmbedderFactory.names]
+    reducers = [Reducer(name) for name in ['PCA', 'TSNE']]
 
-    payload = {
-        'data': [embedder.make_payload() for embedder in embedders]
+    return {
+        'embedders': [embedder.make_payload() for embedder in embedders],
+        'reducers': [reducer.make_payload() for reducer in reducers]
     }
 
-    return payload
+@api.route('/progress/<pid>')
+def get_progress(pid):
+    job = Job.fetch(pid, conn)
+    return {
+                'status': job.get_status(),
+                'queue': job.origin,
+                'function': job.func_name,
+                'args': job.args,
+                'enqueued_at': job.enqueued_at,
+                'started_at': job.started_at,
+                'ended_at': job.ended_at,
+                'exception': job.exc_info,
+                'result': job.result
+            }
 
+@api.route('/<pid>/embedders', methods=["GET", "POST"])
+@fresh_login_required
+def fetch_embedders(pid):
+    project = Project.objects(pk=pid).first()
+
+    if request.method == 'POST':
+        embedders = request.get_json()
+        print('DATA', embedders)
+
+        project.embedders = [Embedder(**embedder) for embedder in embedders]
+        project.embedders.save()
+        project.reload()
+
+        embedding_creator = EmbeddingCreator(projectId=project.id)
+
+        job = q.enqueue_call(
+            func=embedding_creator.extract_vectors, args=(), result_ttl=5000
+        )
+        print('JOB', job.get_id())
+        print('STATUS', job.get_status())
+
+        embedding_creator.build_annoy(n_trees=10)
+    
+    embedders = [EmbedderFactory.create(embedder.name) for embedder in project.embedders]
+    reducers = [Reducer(name) for name in ['PCA', 'TSNE']]
+
+    return {
+        'embedders': [embedder.make_payload() for embedder in embedders],
+        'reducers': [reducer.make_payload() for reducer in reducers]
+    }
+
+
+"""
+@api.route('/upload', methods=['POST'])
+@fresh_login_required
+def upload():
+    data = request.form
+    # Handle url file
+    url_file = request.files['file']
+    url_fpath = join(project.get_path(), f'{project.name}.csv')
+    url_file.save(url_fpath)
+    url_file.close()
+
+    with open(url_fpath, 'r') as csvUpload:
+        project.data = [ImageMetadata(**row) for row in csv.DictReader(csvUpload)]
+
+    os.remove(url_fpath)
+"""
 
 @api.route('/projects', methods=["GET", "POST"])
 @fresh_login_required

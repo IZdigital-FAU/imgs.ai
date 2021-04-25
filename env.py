@@ -14,10 +14,14 @@ class Environment(object):
     MONGODB_PORT = 27017
     MONGODB_USERNAME = ''
 
+    REDIS_URL = 'redis://localhost:6379'
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADS_PATH = f"/home/{username}/imgs.ai/uploads"  # Absolute
     PROJECT_DATA_DIR = os.path.abspath('./data')
     PROJECTS = [f.name for f in os.scandir(PROJECT_DATA_DIR) if f.is_dir()]
+
+    VECTORS_DIR = os.path.abspath('./vectors')
 
     ANNOY_DISTANCE_METRICS = ["angular", "euclidean", "manhattan", "hamming", "dot"] # https://github.com/spotify/annoy#full-python-api
 

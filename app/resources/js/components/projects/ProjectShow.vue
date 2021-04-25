@@ -57,7 +57,7 @@
                 </b-pagination>
             </b-col>
             <b-col>
-                <Embedder></Embedder>
+                <Embedder :id="model.id"></Embedder>
             </b-col>
         </b-row>
     </b-jumbotron>

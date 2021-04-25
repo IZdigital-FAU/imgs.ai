@@ -6,6 +6,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 
 from env import Environment as environment
+
 from .database import db
 
 from .routes.auth import auth
@@ -51,7 +52,7 @@ def test():
 
 @app.after_request
 def add_header(response):
-    response.headers['Cache-Control'] = 'no-cache, no-store'
+    # response.headers['Cache-Control'] = 'no-cache, no-store'
     print(response.headers.__dict__)
     return response
 
