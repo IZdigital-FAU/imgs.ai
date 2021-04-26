@@ -10,7 +10,7 @@ class EmbedderFactory:
     names = get_embedder_names()
 
     @staticmethod
-    def create(embedder):
+    def create(embedder, params={}):
         result = False
 
         if embedder.lower() == 'raw':
@@ -21,5 +21,7 @@ class EmbedderFactory:
             result = Face()
         elif embedder.lower() == 'poses':
             result = Poses()
+
+        if result: result.set(params)
 
         return result

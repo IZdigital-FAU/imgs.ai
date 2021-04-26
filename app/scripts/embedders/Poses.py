@@ -25,12 +25,12 @@ class Poses(Embedder):
 
     def _normalize_keypoints(self, keypoints, scores):
 
-        all_keypoints_scaled = np.zeros((self.params['expected_people'], 17 * 2))
+        all_keypoints_scaled = np.zeros((self.params['expected_people'].value, 17 * 2))
 
         people_count = 0
         for person, person_keypoints in enumerate(keypoints):  # Already ranked by score
             score = scores[person].item()
-            if self.params['min_score'] is None or score > self.params['min_score']:
+            if self.params['minConf'].value is None or score > self.params['minConf'].value:
                 # Scale w.r.t exact bounding box
                 min_x = min([person_keypoint[0] for person_keypoint in person_keypoints])
                 max_x = max([person_keypoint[0] for person_keypoint in person_keypoints])
@@ -45,7 +45,7 @@ class Poses(Embedder):
                         person_keypoints_scaled.extend([scaled_x, scaled_y])
                 all_keypoints_scaled[people_count] = person_keypoints_scaled
                 people_count += 1
-                if people_count == self.expected_people:
+                if people_count == self.params['expected_people'].value:
                     break
 
         return np.mean(all_keypoints_scaled, axis=0)  # Average

@@ -11,6 +11,8 @@ import json
 import signal
 import sys
 
+from rq import get_current_job
+
 import PIL.Image
 
 from random import sample
@@ -18,9 +20,13 @@ import numpy as np
 from annoy import AnnoyIndex
 
 from env import Environment as env
-from ..models.imagemetadata import Project, ImageMetadata
+
+from ..models.project import Project
+from ..models.imagemetadata import ImageMetadata
 
 from ..scripts.embedderFactory import EmbedderFactory
+from ..scripts.reducer import ReducerFactory
+
 from ..scripts.NearestNeighborOperator import NearestNeighborOperator
 
 
@@ -34,22 +40,19 @@ class EmbeddingCreator:
         self.project = Project.objects(pk=projectId).first()
         self.vectorsPath = join(env.VECTORS_DIR, self.project.name)
 
-        print('PROJECT EMBEDDERS', self.project.embedders)
-
         new_dir(self.vectorsPath)
 
-        self.n_imgs = len(self.project.data)
+        self.n_imgs = self.project.data.count()
 
         self.embedders = instantiate_embedders(self.project)
         self.embedding_store_fpath = join(self.vectorsPath, 'embedding_store.hdf5')
 
-        if not isfile(self.embedding_store_fpath):
-            self.create_embedding_store()
+        self.prepare_embedding_store()
 
 
-    def create_embedding_store(self):
+    def prepare_embedding_store(self):
         # log.info("Creating embedding store + allocating space")
-        emb_store = h5py.File(self.embedding_store_fpath, 'w')
+        emb_store = h5py.File(self.embedding_store_fpath, 'a')
 
         for name, embedder in self.embedders.items():
             emb_store.create_dataset(name, (self.n_imgs, embedder.feature_length), compression="lzf")
@@ -62,21 +65,23 @@ class EmbeddingCreator:
         
         PATH = self.project.get_path()
 
-        for img_fname in listdir(PATH):
+        reducibles = [name for name in self.embedders]
+
+        for i, img_fname in enumerate(listdir(PATH)):
             img = PIL.Image.open(join(PATH, img_fname)).convert("RGB")
 
             for name, embedder in self.embedders.items():
                 vector = embedder.transform(img, self.device)
-
-                if embedder.reducer:
-                    vector = embedder.reducer.obj.fit_transform(vector)
-
                 img_vectors[name][i] = vector
-            break
+
+            job = get_current_job()
+            job.meta['progress'] = i + 1
+            job.save_meta()
+            
+        for name in reducibles:
+            img_vectors[name] = self.embedders[name].reducer.fit_transform(img_vectors[name])
 
         img_vectors.close()
-
-        print(self.embedders)
 
 
     def build_annoy(self, n_trees):
@@ -86,17 +91,13 @@ class EmbeddingCreator:
         # log.info(f'Building neighborhoods')
         for name, embedder in self.embedders.items():
             if embedder.reducer:
-                dims = embedder.reducer.n_components
+                dims = min(embedder.reducer.n_components, embedder.feature_length)
             else: dims = embedder.feature_length
-
-            self.project.reload()
-
-            stored = self.project.data.filter(is_stored=True)
 
             for metric in env.ANNOY_DISTANCE_METRICS:
                 ann = AnnoyIndex(dims, metric)
 
-                for i, item in enumerate(stored):
+                for i in range(self.n_imgs):
                     ann.add_item(i, emb_store[name][i])
                 
                 ann.build(n_trees)
@@ -146,20 +147,14 @@ class EmbeddingCreator:
 def instantiate_embedders(project):
     embedders = {}
 
-    print('instantiate embedders', project.embedders)
-
     for embedder in project.embedders:
         name = embedder['name']
         params = embedder['params']
 
-        embedders[name] = EmbedderFactory.create(name)
-
-        for param in params:
-            embedders[name].set_param(param, params[param])
+        embedders[name] = EmbedderFactory.create(name, params)
 
         if embedder.hasReducer():
-            # embedders[name].reducer.active = True
-            embedders[name].reducer.be(embedder['reducer']['name'], embedder['reducer']['params'])
+            embedders[name].reducer = ReducerFactory.create(embedder.reducer.name, embedder.reducer.params)
 
     return embedders
 

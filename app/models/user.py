@@ -6,7 +6,7 @@ from logger import log
 
 from .. import db
 
-from .imagemetadata import Project
+from .project import Project
 
 
 class User(UserMixin, db.Document):

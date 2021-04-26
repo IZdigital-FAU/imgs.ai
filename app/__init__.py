@@ -16,7 +16,7 @@ from .routes.views import view
 from .session import CustomSessionInterface
 from .models.user import User
 
-from .models.imagemetadata import Project, ImageMetadata
+from .models.project import Project, ImageMetadata
 
 
 # Start app

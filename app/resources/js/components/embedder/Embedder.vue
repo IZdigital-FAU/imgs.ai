@@ -11,51 +11,78 @@
             </b-badge>
         </h4>
 
-        <b-card no-body @drop="drop" @dragover="allowDrop">
-            <b-tabs card>
-                <!-- Render Tabs, supply a unique `key` to each tab -->
-                <b-tab v-for="emb in embedderSelection" :key="emb.name" :title="emb.name" :active="isLast(emb.name)">
+        <b-overlay :show="working" rounded>
+            <b-card no-body @drop="drop" @dragover="allowDrop">
+                <b-tabs card>
+                    <!-- Render Tabs, supply a unique `key` to each tab -->
+                    <b-tab v-for="emb in embedderSelection" :key="emb.name" :title="emb.name" :active="isLast(emb.name)">
 
-                    <template #title>
-                        {{emb.name}} <b-icon icon="x" class="ml-2" @click="closeTab(emb.name)"></b-icon>
+                        <template #title>
+                            {{emb.name}} <b-icon icon="x" class="ml-2" @click="closeTab(emb.name)"></b-icon>
+                        </template>
+
+                        <b-input-group :prepend="param" v-for="(value, param) in emb.params" :key="param.name" class="mb-1">
+                            <b-form-input :id="param" :type="emb.params[param].input_type"
+                                        :min="emb.params[param].meta.minVal" :max="emb.params[param].meta.maxVal" :step="emb.params[param].meta.step"
+                                        v-model="emb.params[param].value">
+                            </b-form-input>
+                            <b-input-group-append is-text class="text-monospace">{{ emb.params[param].value }}</b-input-group-append>
+                        </b-input-group>
+
+                        <b-card no-body class="mt-5">
+                            <b-tabs pills card vertical>
+                                <b-tab v-for="reducer in reducers" :key="reducer.name" :title="reducer.name" :active="emb.reducer.name === reducer.name">
+                                    <b-card-text>
+                                        <b-input-group :prepend="param" v-for="(value, param) in reducer.params" v-bind:key="param.name">
+                                            <b-form-input :id="param" :type="reducer.params[param].input_type"
+                                                        :min="reducer.params[param].meta.minVal" :max="reducer.params[param].meta.maxVal" :step="reducer.params[param].meta.step"
+                                                        v-model="emb.reducer.params[param].value"></b-form-input>
+                                            <b-input-group-append is-text class="text-monospace">{{ emb.reducer.params[param].value }}</b-input-group-append>
+                                        </b-input-group>
+
+                                    </b-card-text>
+                                </b-tab>
+                            </b-tabs>
+                        </b-card>
+                    </b-tab>
+
+                    <template #empty>
+                        <div class="text-center text-muted">
+                            There are no embedders attached 🤷<br>
+                            Add one by dragging the above badges here.
+                        </div>
                     </template>
+                </b-tabs>
+            </b-card>
 
-                    <b-input-group :prepend="param" v-for="(value, param) in emb.params" :key="param.name" class="mb-1">
-                        <b-form-input :id="param" :type="emb.params[param].input_type"
-                                    :min="emb.params[param].meta.minVal" :max="emb.params[param].meta.maxVal" :step="emb.params[param].meta.step"
-                                    v-model="emb.params[param].value">
-                        </b-form-input>
-                        <b-input-group-append is-text class="text-monospace">{{ emb.params[param].value }}</b-input-group-append>
-                    </b-input-group>
+            <template #overlay>
+                <div class="text-center">
+                    <b-spinner
+                        variant="success"
+                        class="mb-3"
+                    ></b-spinner>
 
-                    <b-card no-body class="mt-5">
-                        <b-tabs pills card vertical>
-                            <b-tab v-for="reducer in reducers" :key="reducer.name" :title="reducer.name" :active="emb.reducer.name === reducer.name">
-                                <b-card-text>
-                                    <b-input-group :prepend="param" v-for="(value, param) in reducer.params" v-bind:key="param.name">
-                                        <b-form-input :id="param" :type="reducer.params[param].input_type"
-                                                    :min="reducer.params[param].meta.minVal" :max="reducer.params[param].meta.maxVal" :step="reducer.params[param].meta.step"
-                                                    v-model="emb.reducer.params[param].value"></b-form-input>
-                                        <b-input-group-append is-text class="text-monospace">{{ emb.reducer.params[param].value }}</b-input-group-append>
-                                    </b-input-group>
+                    <b-progress :max="total" show-progress striped animated class="mb-2">
+                        <b-progress-bar :value="embeddingProgress" variant="success"></b-progress-bar>
+                    </b-progress>
 
-                                </b-card-text>
-                            </b-tab>
-                        </b-tabs>
-                     </b-card>
-                </b-tab>
+                    <p id="cancel-label">Running feature extraction...</p>
+                    <b-button
+                        ref="cancel"
+                        variant="outline-danger"
+                        size="sm"
+                        aria-describedby="cancel-label"
+                        @click="show = false"
+                    >
+                        Cancel
+                    </b-button>
+                </div>
+            </template>
 
-                <template #empty>
-                    <div class="text-center text-muted">
-                        There are no embedders attached 🤷<br>
-                        Add one by dragging the above badges here.
-                    </div>
-                </template>
-            </b-tabs>
-        </b-card>
-        
+        </b-overlay>
+
         <b-row align-h="center">
-            <b-button @click="post" variant="outline-primary" class="mt-2">🚀 Extract all</b-button>
+            <b-button @click="post" variant="outline-primary" class="mt-2" :disabled="working">🚀 Extract all</b-button>
         </b-row>
 
     </b-container>
@@ -67,7 +94,7 @@ import axios from 'axios'
 export default {
     name: 'Embedder',
 
-    props: ['id'],
+    props: ['id', 'total'],
 
     data() {
         return {
@@ -78,6 +105,11 @@ export default {
                 name: '',
                 file: null
             },
+
+            task: {},
+            working: false,
+
+            embeddingProgress: 0,
 
             embedderSelection: [],
             tabCounter: 0,
@@ -95,7 +127,21 @@ export default {
     methods: {
         post() {   
             let data = this.dispatch();
-            axios.post(`api/${this.id}/embedders`, data, {headers: {"X-CSRFToken": this.csrf}});
+            axios.post(`api/${this.id}/embedders`, data, {headers: {"X-CSRFToken": this.csrf}})
+                .then(resp => {
+                    this.task = resp.data.task;
+                })
+
+            this.working = true;
+
+            this.$nextTick(function () {
+                window.setInterval(() => {
+                    axios.get(`/api/progress/${this.task.embeddingJob}`).then(resp => {
+                        this.embeddingProgress = resp.data.progress
+                    })
+                }, 10000);
+            })
+            
         },
 
         dispatch() {
@@ -163,6 +209,10 @@ export default {
             data.append('name', this.model.name)
             data.append('file', this.model.file)
             data.append('embedders', JSON.stringify(this.embedderSelection))
+        },
+        
+        getProgress() {
+            axios.get('/api/progress')
         }
     }
 }

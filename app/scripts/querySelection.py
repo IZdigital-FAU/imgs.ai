@@ -1,6 +1,6 @@
 from env import Environment as env
 
-from ..models.imagemetadata import Project
+from ..models.project import Project
 
 
 class QuerySelection:

@@ -1,5 +1,5 @@
 from flask.sessions import SecureCookieSession, SecureCookieSessionInterface
-from .models.imagemetadata import Project
+from .models.project import Project
 from env import Environment as env
 
 from .scripts.embedderFactory import EmbedderFactory

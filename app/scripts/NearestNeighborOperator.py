@@ -51,11 +51,9 @@ class NearestNeighborOperator:
     # Get vectors from indices
     def vectors_from_idxs(self, idxs):
         vectors = []
-        print(idxs)
         for idx in idxs:
             vectors.append(self.ann.get_item_vector(idx))  # Indices are strings
 
-        print(vectors)
         return vectors
 
 

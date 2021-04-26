@@ -1,9 +1,9 @@
-from .objectOperator import ObjectOperator
+from .parameterized import Parameterized
 from .parameters import ParameterCollection
 from .reducer import Reducer
 
 
-class Embedder(ObjectOperator):
+class Embedder(Parameterized):
     def __init__(self, params):
         super().__init__(params)
         self.reducer = None
