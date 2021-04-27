@@ -1,4 +1,4 @@
-from util import new_dir, set_cuda, image_from_url, load_img, get_img_paths, arrange_data
+from util import new_dir, image_from_url, load_img, get_img_paths, arrange_data
 import h5py
 from tqdm import tqdm
 from os.path import isfile, join
@@ -33,8 +33,6 @@ from ..scripts.NearestNeighborOperator import NearestNeighborOperator
 class EmbeddingCreator:
 
     def __init__(self, projectId, num_workers=64):
-        self.device = set_cuda()
-
         self.num_workers = num_workers
 
         self.project = Project.objects(pk=projectId).first()
@@ -55,7 +53,8 @@ class EmbeddingCreator:
         emb_store = h5py.File(self.embedding_store_fpath, 'a')
 
         for name, embedder in self.embedders.items():
-            emb_store.create_dataset(name, (self.n_imgs, embedder.feature_length), compression="lzf")
+            if name not in emb_store.keys():
+                emb_store.create_dataset(name, (self.n_imgs, embedder.feature_length), compression="lzf")
 
         emb_store.close()
 
@@ -71,7 +70,7 @@ class EmbeddingCreator:
             img = PIL.Image.open(join(PATH, img_fname)).convert("RGB")
 
             for name, embedder in self.embedders.items():
-                vector = embedder.transform(img, self.device)
+                vector = embedder.transform(img)
                 img_vectors[name][i] = vector
 
             job = get_current_job()

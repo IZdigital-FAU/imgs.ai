@@ -8,6 +8,8 @@ import torchvision as tv
 
 import numpy as np
 
+from util import set_cuda
+
 
 class Poses(Embedder):
     # FIXED BUG: Memory leak when run on CPU (https://github.com/pytorch/pytorch/issues/29809)
@@ -20,46 +22,44 @@ class Poses(Embedder):
     def __init__(self, params=ParameterCollection.get('expected_people', 'minConf'), keep=False):
 
         super().__init__(params)
-        self.feature_length = 17 * 2
+        self.n_keypoints = 17
+        self.feature_length = self.n_keypoints * 2 # KeyPoint(x, y)
         self.keep = keep
 
     def _normalize_keypoints(self, keypoints, scores):
 
-        all_keypoints_scaled = np.zeros((self.params['expected_people'].value, 17 * 2))
+        normalized_keypoints = np.zeros((scores.shape[0], self.n_keypoints, 2))
 
-        people_count = 0
-        for person, person_keypoints in enumerate(keypoints):  # Already ranked by score
-            score = scores[person].item()
-            if self.params['minConf'].value is None or score > self.params['minConf'].value:
-                # Scale w.r.t exact bounding box
-                min_x = min([person_keypoint[0] for person_keypoint in person_keypoints])
-                max_x = max([person_keypoint[0] for person_keypoint in person_keypoints])
-                min_y = min([person_keypoint[1] for person_keypoint in person_keypoints])
-                max_y = max([person_keypoint[1] for person_keypoint in person_keypoints])
+        # Exact bounding box (differs from output[0]['boxes'] !)
+        min_x = keypoints.min(axis=1)[:, 0]
+        max_x = keypoints.max(axis=1)[:, 0]
+        min_y = keypoints.min(axis=1)[:, 1]
+        max_y = keypoints.max(axis=1)[:, 1]
 
-                person_keypoints_scaled = []
-                for person_keypoint in person_keypoints:
-                    if max_x > min_x > 0 and max_y > min_y > 0:  # Failsafe
-                        scaled_x = (person_keypoint[0] - min_x) / (max_x - min_x)
-                        scaled_y = (person_keypoint[1] - min_y) / (max_y - min_y)
-                        person_keypoints_scaled.extend([scaled_x, scaled_y])
-                all_keypoints_scaled[people_count] = person_keypoints_scaled
-                people_count += 1
-                if people_count == self.params['expected_people'].value:
-                    break
+        normalized_keypoints[:, :, 0] = ((keypoints[:, :, 0].T - min_x) / (max_x - min_x)).T
+        normalized_keypoints[:, :, 1] = ((keypoints[:, :, 1].T - min_y) / (max_y - min_y)).T
 
-        return np.mean(all_keypoints_scaled, axis=0)  # Average
+        normalized_keypoints = normalized_keypoints.reshape(scores.shape[0], self.feature_length * 2)
+        normalized_keypoints = (normalized_keypoints.T * scores).T
 
-    def transform(self, img, device="cpu"):
-        if self.model is None:
-            # Construct model only on demand
-            self.model = tv.models.detection.keypointrcnn_resnet50_fpn(pretrained=True).to(device)
-            self.model = self.model
-            self.model.eval()
-            self.transforms = tv.transforms.Compose([tv.transforms.ToTensor()])
+        weighted_average = np.mean(normalized_keypoints, axis=0)
+
+        return weighted_average
+
+
+    def build(self, device='cpu'):
+        print('init model')
+        self.device = device
+        self.model = tv.models.detection.keypointrcnn_resnet50_fpn(pretrained=True).to(device)
+        self.model.eval()
+        self.transforms = tv.transforms.Compose([tv.transforms.ToTensor()])
+
+
+    def transform(self, img):
+        if not self.model: self.build(set_cuda())
 
         with t.no_grad():
-            output = self.model(self.transforms(img).unsqueeze(0).to(device))
+            output = self.model(self.transforms(img).unsqueeze(0).to(self.device))
             scores = from_device(output[0]["scores"])
             keypoints = from_device(output[0]["keypoints"])
             normalized_keypoints = self._normalize_keypoints(keypoints, scores)
