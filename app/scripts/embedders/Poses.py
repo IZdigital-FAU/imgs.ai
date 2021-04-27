@@ -23,7 +23,7 @@ class Poses(Embedder):
 
         super().__init__(params)
         self.n_keypoints = 17
-        self.feature_length = self.n_keypoints * 2 # KeyPoint(x, y)
+        self.feature_length = self.n_keypoints * 2  # KeyPoint(x, y)
         self.keep = keep
 
     def _normalize_keypoints(self, keypoints, scores):
@@ -39,7 +39,7 @@ class Poses(Embedder):
         normalized_keypoints[:, :, 0] = ((keypoints[:, :, 0].T - min_x) / (max_x - min_x)).T
         normalized_keypoints[:, :, 1] = ((keypoints[:, :, 1].T - min_y) / (max_y - min_y)).T
 
-        normalized_keypoints = normalized_keypoints.reshape(scores.shape[0], self.feature_length * 2)
+        normalized_keypoints = normalized_keypoints.reshape(scores.shape[0], self.feature_length)
         normalized_keypoints = (normalized_keypoints.T * scores).T
 
         weighted_average = np.mean(normalized_keypoints, axis=0)
