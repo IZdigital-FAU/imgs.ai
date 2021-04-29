@@ -18,6 +18,8 @@ from .models.user import User
 
 from .models.project import Project, ImageMetadata
 
+from util import list_imgs
+
 
 # Start app
 app = Flask(__name__)
@@ -57,8 +59,6 @@ def add_header(response):
     return response
 
 
-# print('PROJECT FIELDS', Project._fields)
-
 for project_dir in listdir(environment.PROJECT_DATA_DIR):
     if project_dir in [project.name for project in Project.objects().all()] or project_dir.endswith('.zip'):
         print('SKIPPING', project_dir)
@@ -70,6 +70,6 @@ for project_dir in listdir(environment.PROJECT_DATA_DIR):
 
     PROJECT_PATH = join(environment.PROJECT_DATA_DIR, project_dir)
 
-    project.data = [ImageMetadata(**{'name': img}) for img in listdir(PROJECT_PATH)]
+    project.data = [ImageMetadata(**{'name': img}) for img in list_imgs(PROJECT_PATH)]
 
     project.save()

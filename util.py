@@ -20,6 +20,7 @@ from logger import log
 
 import urllib
 
+
 @lru_cache(maxsize=100)  # Cache up to 100 images
 def fast_base64img(path, load_urls=False):
     if path.startswith("http"):
@@ -113,6 +114,13 @@ def get_img_paths(folder) -> list:
             img_paths.append([os.path.abspath(os.path.join(root, fname)), "", None])
     
     return img_paths
+
+
+def list_imgs(path, enum=False):
+    img_types = ('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')
+    imgs = [fname for fname in listdir(path) if fname.lower().endswith(img_types)]
+
+    return enumerate(imgs) if enum else imgs
 
 
 def get_embedder_names():

@@ -60,7 +60,29 @@ class Poses(Embedder):
 
         with t.no_grad():
             output = self.model(self.transforms(img).unsqueeze(0).to(self.device))
-            scores = from_device(output[0]["scores"])
-            keypoints = from_device(output[0]["keypoints"])
-            normalized_keypoints = self._normalize_keypoints(keypoints, scores)
-            return normalized_keypoints.astype(np.float32).flatten()
+            
+            keypoints = output[0]['keypoints']
+            normalized_keypoints = t.zeros(keypoints.shape[0], self.n_keypoints, 2)
+            weighted_average = t.zeros(self.feature_length)
+
+            if keypoints.numel():
+
+                scores = output[0]['scores']
+
+                min_x = t.min(keypoints, dim=1)[0][:, 0]
+                max_x = t.max(keypoints, dim=1)[0][:, 0]
+                min_y = t.min(keypoints, dim=1)[0][:, 1]
+                max_y = t.max(keypoints, dim=1)[0][:, 1]
+
+                normalized_keypoints[:, :, 0] = ((keypoints[:, :, 0].T - min_x) / (max_x - min_x)).T
+                normalized_keypoints[:, :, 1] = ((keypoints[:, :, 1].T - min_y) / (max_y - min_y)).T
+
+                normalized_keypoints = normalized_keypoints.reshape(scores.shape[0], self.feature_length)
+                normalized_keypoints = (normalized_keypoints.T * scores).T
+
+                weighted_average = t.mean(normalized_keypoints, axis=0)
+
+            # scores = from_device(output[0]["scores"])
+            # keypoints = from_device(output[0]["keypoints"])
+            # normalized_keypoints = self._normalize_keypoints(keypoints, scores)
+            return weighted_average # normalized_keypoints.astype(np.float32).flatten()

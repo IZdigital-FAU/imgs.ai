@@ -1,4 +1,4 @@
-from util import new_dir, image_from_url, load_img, get_img_paths, arrange_data
+from util import new_dir, image_from_url, load_img, get_img_paths, arrange_data, list_imgs
 import h5py
 from tqdm import tqdm
 from os.path import isfile, join
@@ -56,42 +56,58 @@ class EmbeddingCreator:
             if name not in emb_store.keys():
                 emb_store.create_dataset(name, (self.n_imgs, embedder.feature_length), compression="lzf")
 
+            if embedder.hasReducer():
+                name = make_reducer_name(name, embedder)
+                
+                if name not in emb_store.keys():
+                    dims = self.getDims(embedder)
+                    emb_store.create_dataset(name, (self.n_imgs, dims), compression="lzf")
+
         emb_store.close()
 
 
     def extract_vectors(self):
-        img_vectors = h5py.File(self.embedding_store_fpath, 'a')
+        emb_store = h5py.File(self.embedding_store_fpath, 'r+')
         
         PATH = self.project.get_path()
 
-        reducibles = [name for name in self.embedders]
+        reducibles = [name for name, embedder in self.embedders.items()]
 
-        for i, img_fname in enumerate(listdir(PATH)):
+        job = get_current_job()
+
+        for i, img_fname in list_imgs(PATH, enum=1):
+            print(img_fname)
             img = PIL.Image.open(join(PATH, img_fname)).convert("RGB")
 
             for name, embedder in self.embedders.items():
                 vector = embedder.transform(img)
-                img_vectors[name][i] = vector
+                emb_store[name][i] = vector
 
-            job = get_current_job()
             job.meta['progress'] = i + 1
             job.save_meta()
             
         for name in reducibles:
-            img_vectors[name] = self.embedders[name].reducer.fit_transform(img_vectors[name])
+            reducer_name = make_reducer_name(name, embedder)
 
-        img_vectors.close()
+            print(name, emb_store[name])
+            print(not np.any(emb_store[name][:]))
+
+            emb_store[reducer_name][:] = self.embedders[name].reducer.fit_transform(emb_store[name])
+
+        emb_store.close()
+
 
 
     def build_annoy(self, n_trees):
-        emb_store = h5py.File(self.embedding_store_fpath)
+        emb_store = h5py.File(self.embedding_store_fpath, 'r')
 
         # Build and save neighborhoods
         # log.info(f'Building neighborhoods')
         for name, embedder in self.embedders.items():
-            if embedder.reducer:
-                dims = min(embedder.reducer.n_components, embedder.feature_length)
-            else: dims = embedder.feature_length
+            if embedder.hasReducer():
+                name = make_reducer_name(name, embedder)
+
+            dims = emb_store[name].shape[1] 
 
             for metric in env.ANNOY_DISTANCE_METRICS:
                 ann = AnnoyIndex(dims, metric)
@@ -143,6 +159,10 @@ class EmbeddingCreator:
         return [{'id': i, 'url': img.url} for i, img in enumerate(stored) if i in nns]
 
 
+    def getDims(self, embedder):
+        return min(embedder.reducer.n_components, embedder.feature_length, self.n_imgs) if embedder.reducer else embedder.feature_length
+
+
 def instantiate_embedders(project):
     embedders = {}
 
@@ -153,14 +173,18 @@ def instantiate_embedders(project):
         embedders[name] = EmbedderFactory.create(name, params)
 
         if embedder.hasReducer():
+            embedder.reducer.params['n_components'] = min(embedder.reducer.params['n_components'], project.data.count())
             embedders[name].reducer = ReducerFactory.create(embedder.reducer.name, embedder.reducer.params)
 
     return embedders
 
 
+def make_reducer_name(name, embedder):
+    return f'{name}_{embedder.reducer.__class__.__name__}'
+
 """
 def multithread_io():
-    img_vectors = h5py.File(self.embedding_store_fpath, 'a')
+    emb_store = h5py.File(self.embedding_store_fpath, 'a')
 
     # Set up threading
     pbar_success = tqdm(total=self.n_imgs, desc="Embedded")
@@ -171,7 +195,7 @@ def multithread_io():
     # Catch interruptions to be able to close file
     def signal_handler(sig, frame):
         log.info("Shutting down gracefully...")
-        img_vectors.close()
+        emb_store.close()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -193,7 +217,7 @@ def multithread_io():
                     if embedder.reducer:
                         vector = embedder.reducer.obj.fit_transform(vector)
 
-                    img_vectors[name][i] = vector
+                    emb_store[name][i] = vector
 
             else:
                 print('FAILED IMG', item['url'])
@@ -206,5 +230,5 @@ def multithread_io():
     # Cleanup
     pbar_success.close()
     pbar_failure.close()
-    img_vectors.close()
+    emb_store.close()
 """

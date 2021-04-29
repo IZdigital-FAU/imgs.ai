@@ -139,7 +139,7 @@ export default {
                     axios.get(`/api/progress/${this.task.embeddingJob}`).then(resp => {
                         this.embeddingProgress = resp.data.progress
                     })
-                }, 10000);
+                }, 5000);
             })
             
         },

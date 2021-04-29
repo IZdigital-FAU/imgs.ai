@@ -16,5 +16,10 @@ class Face(Embedder):
 
     def transform(self, img, device="cpu"):
         faces = face_recognition.face_encodings(np.array(img))
-        output = np.mean(faces[: self.params['expected_people'].value], axis=0)  # Average
+
+        output = np.zeros((Face.feature_length))
+
+        if faces:
+            print([face.shape for face in faces])
+            output = np.mean(faces[: self.params['expected_people'].value], axis=0)  # Average
         return output.astype(np.float32).flatten()
