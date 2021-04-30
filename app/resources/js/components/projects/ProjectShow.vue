@@ -36,7 +36,7 @@
 
             </b-col>
             <b-col>
-                <Embedder :id="model.id" :total="total"></Embedder>
+                <Embedder :id="model.id" :total="pagination.total"></Embedder>
             </b-col>
         </b-row>
     </b-jumbotron>

@@ -1,60 +1,72 @@
 <template>
-    <b-card class="mt-3" header="Visual query">
-        <b-row>
-            <b-col>
-                <b-row>
-                    <b-col>
-                        <b-img class="grid-item-img pos"
-                            v-for="img in positiveImages" v-bind:key="img.id"
-                            :src="img.url" :ref="img.id"
-                            @click="select(img)"></b-img>
-                    </b-col>
-                    <b-col>
-                        <b-img class="grid-item-img neg"
-                            v-for="img in negativeImages" v-bind:key="img.id"
-                            :src="img.url" :ref="img.id"
-                            @click="select(img)"></b-img>
-                    </b-col>
-                </b-row>
+        <b-card class="mt-3" header="Visual query">
+            <b-row>
+                <b-col>
+                    <b-row>
+                        <b-col>
+                            <b-img class="grid-item-img pos"
+                                v-for="img in positiveImages" v-bind:key="img.id"
+                                :src="img.url" :ref="img.id"
+                                @click="select(img)"></b-img>
+                        </b-col>
+                        <b-col>
+                            <b-img class="grid-item-img neg"
+                                v-for="img in negativeImages" v-bind:key="img.id"
+                                :src="img.url" :ref="img.id"
+                                @click="select(img)"></b-img>
+                        </b-col>
+                    </b-row>
 
-                <b-button-group>
-                    <b-button variant="outline-danger" @click="remove()">Remove</b-button>
-                    <b-button variant="outline-info" @click="clear()">Clear</b-button>
-                </b-button-group>
-            </b-col>
-            <b-col>
-                <SearchPanel @update="update"></SearchPanel>
-            </b-col>
-        </b-row>
-        
-        <CarouselModal :slide="slide"></CarouselModal>
+                    <b-button-group>
+                        <b-button variant="outline-danger" @click="remove()">Remove</b-button>
+                        <b-button variant="outline-info" @click="clear()">Clear</b-button>
+                    </b-button-group>
+                </b-col>
+                <b-col>
+                    <SearchPanel @update="update"></SearchPanel>
+                </b-col>
+            </b-row>
+            
+            <CarouselModal :slide="slide"></CarouselModal>
 
-        <b-button-group v-if="this.selected_imgs.length > 0">
-            <b-button variant="success" @click="makePositive()">Positive</b-button>
-            <b-button variant="danger" @click="makeNegative()">Negative</b-button>
-        </b-button-group>
+            <b-button-group v-if="this.selected_imgs.length > 0">
+                <b-button variant="success" @click="makePositive()">Positive</b-button>
+                <b-button variant="danger" @click="makeNegative()">Negative</b-button>
+            </b-button-group>
 
-        <b-container fluid ref="grid">
-            <b-img class="grid-item-img"
-                    v-for="img in imgs" v-bind:key="img.id"
-                    :src="img.url" :ref="img.id"
-                    @click="select(img)"
-                    @dblclick="openModal(img)"></b-img>
-        </b-container>
-    </b-card>
+            <b-container fluid>
+                <stack
+                    :column-min-width="300"
+                    :gutter-width="15"
+                    :gutter-height="15"
+                    monitor-images-loaded>
+                    <stack-item
+                            v-for="img in imgs" :key="img.id"
+                            style="transition: transform 300ms">
+                        
+                        <b-img :src="img.url" fluid :ref="img.id"
+                            @dblclick="openModal(img)"
+                            @click="select(img)"
+                        ></b-img>
+
+                    </stack-item>
+                </stack>
+            </b-container>
+
+        </b-card>
 </template>
 
 <script>
 import axios from 'axios'
 
-var Packery = require('packery');
-
 import SearchPanel from './SearchPanel.vue'
 import CarouselModal from './CarouselModal.vue'
 
+import { Stack, StackItem } from 'vue-stack-grid';
+
 export default {
     name: 'ImageGrid',
-    components: {SearchPanel, CarouselModal},
+    components: {SearchPanel, CarouselModal, Stack, StackItem},
 
     data : () => ({
         imgs: [],
@@ -68,6 +80,8 @@ export default {
         
         slide: 0,
 
+        loading: true,
+
         csrf: document.querySelector('#csrf').value
     }),
 
@@ -78,11 +92,7 @@ export default {
             this.embedders = response.data.embedders
         })
 
-        let pckry = new Packery(this.$refs.grid, {
-            itemSelector: '.grid-item-img',
-            // columnWidth: 10,
-            gutter: 10
-        });
+        this.loading = false;
 
         this.$nextTick(function () {
             window.dispatchEvent(new Event('resize'));

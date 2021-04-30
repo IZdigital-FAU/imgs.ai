@@ -134,12 +134,14 @@ class EmbeddingCreator:
         k = min(n, self.n_imgs)
 
         if not pos:
-            return sample([{'id': i, 'url': url_for('api.fetch_img', pid=self.project.id, img=img.name)} for i, img in enumerate(self.project.data)], k)
+            return sample([{'id': i, 'url': make_img_url(self.project.id, img.name)} for i, img in enumerate(self.project.data)], k)
 
         # Load neighborhood file
         hood_file = join(self.vectorsPath, f'{embedder}_{metric}.ann')
 
-        dim = self.embedders[embedder].reducer.n_components if self.embedders[embedder].reducer else self.embedders[embedder].feature_length
+        embedder_name, reducer_name = embedder.split('_')
+        print('EMBEDDERS', self.embedders)
+        dim = self.embedders[embedder_name].reducer.n_components if self.embedders[embedder_name].hasReducer() else self.embedders[embedder_name].feature_length
 
         ann = AnnoyIndex(dim, metric)
         ann.load(hood_file)
@@ -155,7 +157,7 @@ class EmbeddingCreator:
         # Unload neighborhood file
         ann.unload()
 
-        return [{'id': i, 'url': img.url} for i, img in enumerate(self.project.data) if i in nns]
+        return [{'id': i, 'url': make_img_url(self.project.id, img.name)} for i, img in enumerate(self.project.data) if i in nns]
 
 
     def getDims(self, embedder):
@@ -180,6 +182,10 @@ def instantiate_embedders(project):
 
 def make_reducer_name(name, embedder):
     return f'{name}_{embedder.reducer.__class__.__name__}'
+
+
+def make_img_url(id, name):
+    return url_for('api.fetch_img', pid=id, img=name)
 
 """
 def multithread_io():

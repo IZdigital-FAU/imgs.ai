@@ -68,7 +68,6 @@ export default {
 
     methods: {
         onRowDblClicked(record, index) {
-            console.log('I GOT HERE!')
             this.$router.push({name: 'project.show', params: record})
         }
     }
