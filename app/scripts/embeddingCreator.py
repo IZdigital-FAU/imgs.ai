@@ -1,4 +1,5 @@
 from util import new_dir, image_from_url, load_img, get_img_paths, arrange_data, list_imgs
+from flask import url_for
 import h5py
 from tqdm import tqdm
 from os.path import isfile, join
@@ -129,13 +130,11 @@ class EmbeddingCreator:
         # If we have queries, search nearest neighbors, else display random data points
         # (ignore negative only examples, as results will be random anyway)
         
-        stored = self.project.data.filter(is_stored=True)
-        
         n = int(n)
-        k = min(n, self.n_imgs, len(stored))
+        k = min(n, self.n_imgs)
 
         if not pos:
-            return sample([{'id': i, 'url': img.url} for i, img in enumerate(stored)], k)
+            return sample([{'id': i, 'url': url_for('api.fetch_img', pid=self.project.id, img=img.name)} for i, img in enumerate(self.project.data)], k)
 
         # Load neighborhood file
         hood_file = join(self.vectorsPath, f'{embedder}_{metric}.ann')
@@ -156,7 +155,7 @@ class EmbeddingCreator:
         # Unload neighborhood file
         ann.unload()
 
-        return [{'id': i, 'url': img.url} for i, img in enumerate(stored) if i in nns]
+        return [{'id': i, 'url': img.url} for i, img in enumerate(self.project.data) if i in nns]
 
 
     def getDims(self, embedder):

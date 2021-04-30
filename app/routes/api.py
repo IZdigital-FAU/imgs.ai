@@ -2,6 +2,7 @@ from flask import Blueprint, request, session, send_from_directory, redirect, ur
 from flask_login import fresh_login_required, current_user
 
 from os.path import join
+from os import listdir
 import os
 
 import json
@@ -34,18 +35,15 @@ api = Blueprint('api', __name__)
 def get_metadata():
     return {
             'projects': [project.name for project in Project.objects()],
-            'embedders': EmbedderFactory.names, # TODO: Load only project-immanent embedders
             'orderings': env.MODES,
             'distance_metrics': env.ANNOY_DISTANCE_METRICS
         }
 
 @api.route("/<pid>/<img>")
 @fresh_login_required
-def cdn(pid, img):
+def fetch_img(pid, img):
     project = Project.objects(pk=pid).first()
     PATH = join(env.PROJECT_DATA_DIR, project.name)
-
-    print(project, PATH)
 
     return send_from_directory(PATH, img)
 
@@ -58,11 +56,12 @@ def fetch_imgs():
     if request.method == 'POST': query.set(**request.get_json())
     
     project = Project.objects().filter(name=query.project).first()
-    embedding_creator = EmbeddingCreator(project.id)
 
+    embedding_creator = EmbeddingCreator(project.id)
     images = embedding_creator.compute_nns(**{k:v for k,v in query.get().items() if k != 'project'})
 
-    return {'data': images, 'querySelection': query.get()}
+    return {'data': images, 'querySelection': query.get(),
+                            'embedders': query.get_project_embedders()}
 
 
 @api.route('/embedders', methods=['GET'])

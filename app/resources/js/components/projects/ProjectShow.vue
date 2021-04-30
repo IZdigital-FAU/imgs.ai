@@ -2,24 +2,18 @@
     <b-jumbotron :header="model.name">
         <b-row>
             <b-col>
-                <b-table hover :busy="loading"
+                <Table
+                    :loading="loading"
                     :items="imgs"
                     :fields="fields"
                     selectable
                     select-mode="multi"
-                    @row-selected="onRowSelected"
-                    :tbody-transition-props="transProps">
 
-                    <template #cell(name)="{ item, rowSelected }">
-                        <template v-if="rowSelected">
-                            <span aria-hidden="true">✅</span> {{item.name}}
-                            <span class="sr-only">Selected</span>
-                        </template>
-                        <template v-else>
-                            <span aria-hidden="true">&nbsp;</span> {{item.name}}
-                            <span class="sr-only">Not selected</span>
-                        </template>
-                    </template>
+                    :pagination="pagination"
+                    @getPage="getPage"
+
+                    @onRowSelected="onRowSelected"
+                    :tbody-transition-props="transProps">
 
                     <template #cell(actions)="row">
                         <b-button variant="outline-info" size="sm" @click="row.toggleDetails" class="mr-2">
@@ -38,23 +32,8 @@
                     <template #row-details="row">
                         <b-img :src="getImg(row.item.name)" width="300" fluid center></b-img>
                     </template>
+                </Table>
 
-                </b-table>
-
-                <b-pagination @page-click="getPage" v-model="currentPage"
-                            :per-page="per_page" :total-rows="total"
-                            first-text="⏮" last-text="⏭"
-                            pills align="center">
-
-                    <template #prev-text>
-                        <b-icon icon="chevron-left"></b-icon>
-                    </template>
-
-                    <template #next-text>
-                        <b-icon icon="chevron-right"></b-icon>
-                    </template>
-
-                </b-pagination>
             </b-col>
             <b-col>
                 <Embedder :id="model.id" :total="total"></Embedder>
@@ -67,10 +46,11 @@
 import axios from 'axios'
 
 import Embedder from '../embedder/Embedder.vue'
+import Table from '../layout/Table.vue'
 
 export default {
     name: 'ProjectShow',
-    components: {Embedder},
+    components: {Embedder, Table},
 
     data() {
         return {
@@ -91,9 +71,11 @@ export default {
                 name: 'flip-list'
             },
 
-            currentPage: 1,
-            total: 0,
-            per_page: 0,
+            pagination: {
+                currentPage: 1,
+                total: 0,
+                per_page: 0
+            },
 
             csrf: document.querySelector('#csrf').value
         }
@@ -129,14 +111,10 @@ export default {
             axios.get(`/api/project/${this.model.id}`, { params: { page: page } }).then(resp => {
                 let data = resp.data.data
 
-                // data.forEach((img, i) => {
-                //     if (!img.is_stored) data[i]._rowVariant = 'danger'
-                // })
-
                 this.imgs = data;
 
-                this.total = resp.data.total
-                this.per_page = resp.data.per_page
+                this.pagination.total = resp.data.total
+                this.pagination.per_page = resp.data.per_page
                 this.model.name = resp.data.name
                 this.loading = false;
             })

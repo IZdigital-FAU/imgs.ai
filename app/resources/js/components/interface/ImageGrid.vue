@@ -64,6 +64,7 @@ export default {
         negativeImages: [],
 
         querySelection: {},
+        embedders: [],
         
         slide: 0,
 
@@ -74,6 +75,7 @@ export default {
         await axios.get('api/images').then(response => {
             this.imgs = response.data.data
             this.querySelection = response.data.querySelection
+            this.embedders = response.data.embedders
         })
 
         let pckry = new Packery(this.$refs.grid, {

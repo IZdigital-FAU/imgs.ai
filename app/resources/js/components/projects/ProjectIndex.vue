@@ -4,37 +4,36 @@
             <b-icon icon="plus-square"></b-icon> Create new
         </b-button>
 
-        <b-table
+        <Table
             :items="projects"
             :fields="fields"
-            :busy="loading"
+            :loading="loading"
 
-            @row-dblclicked="showProject"
+            :pagination="{}"
+            
+            @onRowDblClicked="onRowDblClicked">
 
-            hover>
-
-            <template #table-caption>Manage your projects</template>
-
-            <template #table-busy>
-                <div class="text-center text-danger my-2">
-                    <b-spinner class="align-middle"></b-spinner>
-                    <strong>Loading...</strong>
-                </div>
+            <template #cell(nimgs)="project">
+                <b-badge variant="primary" pill>{{project.item.nimgs}}</b-badge>
             </template>
 
             <template #cell(nimgs)="project">
                 <b-badge variant="primary" pill>{{project.item.nimgs}}</b-badge>
             </template>
 
-        </b-table>
+            <template #table-caption>Manage your projects</template>
+
+        </Table>
     </b-container>
 </template>
 
 <script>
 import axios from 'axios';
+import Table from '../layout/Table.vue';
 
 export default {
     name: 'ProjectIndex',
+    components: {Table},
 
     data() {
         return {
@@ -55,7 +54,8 @@ export default {
                     sortable: true
                 }
             ],
-            loading: true
+            loading: true,
+            pagination: {}
         }
     },
 
@@ -67,7 +67,8 @@ export default {
     },
 
     methods: {
-        showProject(record, index) {
+        onRowDblClicked(record, index) {
+            console.log('I GOT HERE!')
             this.$router.push({name: 'project.show', params: record})
         }
     }

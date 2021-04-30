@@ -15,7 +15,7 @@
             label-cols-sm="3"
             label-align-sm="right"
         >
-            <b-form-select id="embedders" :options="getOptions(metadata.embedders)" v-model="query.embedder" @change="update"></b-form-select>
+            <b-form-select id="embedders" :options="getOptions(embedders)" v-model="query.embedder" @change="update"></b-form-select>
         </b-form-group>
 
         <b-form-group
@@ -77,6 +77,9 @@ export default {
         },
         negativeImages() {
             return this.$parent.negativeImages
+        },
+        embedders() {
+            return this.$parent.embedders
         }
     },
 

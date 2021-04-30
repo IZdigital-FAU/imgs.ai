@@ -1,6 +1,3 @@
-from os.path import join, isfile
-from os import listdir
-
 from flask import Flask, Blueprint, request
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -16,10 +13,7 @@ from .routes.views import view
 from .session import CustomSessionInterface
 from .models.user import User
 
-from .models.project import Project, ImageMetadata
-
-from util import list_imgs
-
+from .scripts.project_loader import load_project
 
 # Start app
 app = Flask(__name__)
@@ -48,28 +42,15 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.objects(pk=user_id).first()
 
-@app.before_request
-def test():
-    print(request.cookies)
+# @app.before_request
+# def test():
+#     print(request.cookies)
 
-@app.after_request
-def add_header(response):
-    # response.headers['Cache-Control'] = 'no-cache, no-store'
-    print(response.headers.__dict__)
-    return response
+# @app.after_request
+# def add_header(response):
+#     # response.headers['Cache-Control'] = 'no-cache, no-store'
+#     print(response.headers.__dict__)
+#     return response
 
 
-for project_dir in listdir(environment.PROJECT_DATA_DIR):
-    if project_dir in [project.name for project in Project.objects().all()] or project_dir.endswith('.zip'):
-        print('SKIPPING', project_dir)
-        continue
-
-    project = Project(name=project_dir)
-
-    print('SAVING', project_dir)
-
-    PROJECT_PATH = join(environment.PROJECT_DATA_DIR, project_dir)
-
-    project.data = [ImageMetadata(**{'name': img}) for img in list_imgs(PROJECT_PATH)]
-
-    project.save()
+load_project()
