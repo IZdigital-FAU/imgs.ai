@@ -1,0 +1,15 @@
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+.vagrant/
+.vscode/
+Vagrantfile
+migrations/
+users.db
+*.log
+logs/*
+uploads/
+node_modules
+data
+vectors
+.git

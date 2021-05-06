@@ -1,0 +1,62 @@
+version: '3.4'
+services: 
+    flask_gunicorn: &base
+        build: .
+        image: flask_gunicorn
+        expose: 
+            - 5002
+        depends_on:
+            - redis
+            - mongo
+        volumes:
+            - ./data:/app/data
+            - ./vectors:/app/vectors
+        links:
+            - redis
+
+    redis:
+        image: redis
+        volumes:
+            - redis_data:/data
+
+    rq:
+        <<: *base
+        command: rq worker -u redis://redis:6379
+        depends_on:
+            - redis
+        links:
+            - redis
+            
+
+    mongo:
+        image: mongo
+        volumes:
+            - mongo_data:/data/db
+
+    nginx:
+        image: nginx
+        build: ./nginx
+        depends_on:
+            - flask_gunicorn
+        ports:
+            - "9999:80"
+        volumes:
+            - nginx_logs:/var/log/nginx
+
+
+volumes:
+    nginx_logs:
+        driver: local
+    mongo_data:
+        driver: local
+    redis_data:
+        driver: local
+
+# https://www.digitalocean.com/community/tutorials/how-to-set-up-flask-with-mongodb-and-docker
+# NEED REVERSE PROXY NGINX!
+
+# https://boxboat.com/2017/01/23/volumes-and-dockerfiles-dont-mix/
+
+# https://dev.to/ishankhare07/nginx-as-reverse-proxy-for-a-flask-app-using-docker-3ajg
+
+# https://www.distributedpython.com/2018/11/15/celery-docker/

@@ -1,0 +1,1 @@
+gunicorn --timeout 600 -b 0.0.0.0:5002 --access-logfile logs/access_`date +"%Y-%m-%d"`.log app:app --reload
