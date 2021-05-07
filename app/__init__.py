@@ -2,7 +2,7 @@ from flask import Flask, Blueprint, request
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 
-from env import Environment as environment
+from env import Environment as env
 
 from .database import db
 
@@ -15,10 +15,14 @@ from .models.user import User
 
 from .scripts.project_loader import load_project
 
+
 # Start app
 app = Flask(__name__)
 # app.session_interface = CustomSessionInterface()
-app.config.from_object(environment)
+
+env.load_ini()
+print(env.__dict__)
+app.config.from_object(env)
 
 db.init_app(app)
 

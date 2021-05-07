@@ -10,3 +10,4 @@ users.db
 logs/*
 uploads/
 node_modules
+app/config.ini

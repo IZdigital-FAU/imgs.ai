@@ -86,8 +86,6 @@ export default {
 
         this.getPage({}, 1)
 
-        console.log('imgs', this.imgs)
-
     },
 
     deactivated() {
@@ -96,11 +94,9 @@ export default {
 
     methods: {
         post() {
-            console.log('hi')
         },
 
         delete(item) {
-            console.log('DELETE', item)
             axios.delete(item.url)
         },
         onRowSelected(items) {

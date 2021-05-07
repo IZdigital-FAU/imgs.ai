@@ -1,4 +1,5 @@
 <template>
+    <div>
         <b-card class="mt-3" header="Visual query">
             <b-row>
                 <b-col>
@@ -34,7 +35,10 @@
                 <b-button variant="danger" @click="makeNegative()">Negative</b-button>
             </b-button-group>
 
-            <b-container fluid>
+        </b-card>
+
+        <b-overlay :show="loading" spinner-variant="danger">
+            <b-container fluid class="mt-2">
                 <stack
                     :column-min-width="300"
                     :gutter-width="15"
@@ -52,8 +56,8 @@
                     </stack-item>
                 </stack>
             </b-container>
-
-        </b-card>
+        </b-overlay>
+    </div>
 </template>
 
 <script>
@@ -154,9 +158,6 @@ export default {
             this.selected_imgs.forEach(img => {
                 let posIdx = this.positiveImages.map(pos => pos.id)
                 let negIdx = this.negativeImages.map(neg => neg.id)
-
-                console.log('posIdx', posIdx)
-                console.log('imgID', img.id)
 
                 if (posIdx.includes(img.id)) this.positiveImages.splice(posIdx.indexOf(img.id), 1)
                 else if (negIdx.includes(img.id)) this.negativeImages.splice(negIdx.indexOf(img.id), 1)

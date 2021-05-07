@@ -77,7 +77,6 @@ class EmbeddingCreator:
         job = get_current_job()
 
         for i, img_fname in list_imgs(PATH, enum=1):
-            print(img_fname)
             img = PIL.Image.open(join(PATH, img_fname)).convert("RGB")
 
             for name, embedder in self.embedders.items():
@@ -89,10 +88,6 @@ class EmbeddingCreator:
             
         for name in reducibles:
             reducer_name = make_reducer_name(name, embedder)
-
-            print(name, emb_store[name])
-            print(not np.any(emb_store[name][:]))
-
             emb_store[reducer_name][:] = self.embedders[name].reducer.fit_transform(emb_store[name])
 
         emb_store.close()
@@ -137,6 +132,8 @@ class EmbeddingCreator:
             return sample([{'id': i, 'url': make_img_url(self.project.id, img.name)} for i, img in enumerate(self.project.data)], k)
 
         # Load neighborhood file
+        print('HOOD file:', embedder)
+        
         hood_file = join(self.vectorsPath, f'{embedder}_{metric}.ann')
 
         embedder_name, reducer_name = embedder.split('_')

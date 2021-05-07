@@ -18,7 +18,12 @@ def load_project():
         print('SAVING', project_dir)
         PROJECT_PATH = join(env.PROJECT_DATA_DIR, project_dir)
 
-        project.data = [ImageMetadata(**{'name': img}) for img in list_imgs(PROJECT_PATH)]
+        imgs = list_imgs(PROJECT_PATH)
+
+        if len(imgs) == 0:
+            continue
+
+        project.data = [ImageMetadata(**{'name': img}) for img in imgs]
 
         project.save()
 

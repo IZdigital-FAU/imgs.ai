@@ -1,4 +1,4 @@
 from rq import Queue
-from .worker import conn
+from .redis import redis_conn
 
-q = Queue(connection=conn)
+q = Queue(connection=redis_conn)

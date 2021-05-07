@@ -18,7 +18,7 @@ from ..models.imagemetadata import ImageMetadata
 from ..models.embedder import Embedder
 from ..models.task import Task
 
-from ..queue import q, conn
+from ..queue import q, redis_conn
 from rq.job import Job
 from rq import get_current_job
 
@@ -77,7 +77,19 @@ def generic_embedders():
 
 @api.route('/progress/<pid>')
 def get_progress(pid):
-    job = Job.fetch(pid, conn)
+    job = Job.fetch(pid, redis_conn)
+    task = Task.objects(job_id=pid)
+
+    fields = {
+        'status': job.get_status(),
+        'started_at': job.started_at
+    }
+
+    if job.exc_info: fields['error'] = job.exc_info
+
+    if fields['status'] == 'finished': fields['ended_at'] = job.ended_at
+
+    task.update(**fields)
 
     return job.meta
 
@@ -104,10 +116,13 @@ def fetch_embedders(pid):
         embedding_job = q.enqueue_call(embedding_creator.extract_vectors, args=(), timeout=2000, result_ttl=5000)
         indexing_job = q.enqueue_call(embedding_creator.build_annoy, kwargs={'n_trees': 10}, timeout=2000, result_ttl=5000)
 
-        task = Task(user=current_user.id)
-        task.set(embedding_job)
-        task.set(indexing_job)
-        task.save()
+        emb_task = Task(user=current_user.id)
+        emb_task.setup(embedding_job)
+        emb_task.save()
+
+        idx_task = Task(user=current_user.id)
+        idx_task.setup(indexing_job)
+        idx_task.save()
 
         payload['task'] = {'embeddingJob': embedding_job.id, 'indexingJob': indexing_job.id}
 

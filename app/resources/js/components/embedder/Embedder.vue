@@ -11,7 +11,7 @@
             </b-badge>
         </h4>
 
-        <b-overlay :show="working" rounded>
+        <b-overlay :show="working" rounded no-center>
             <b-card no-body @drop="drop" @dragover="allowDrop">
                 <b-tabs card>
                     <!-- Render Tabs, supply a unique `key` to each tab -->
@@ -62,7 +62,7 @@
                         class="mb-3"
                     ></b-spinner>
 
-                    <b-progress :max="total" show-progress striped animated class="mb-2">
+                    <b-progress :max="total" show-progress striped animated class="mb-2 w-75 mx-auto">
                         <b-progress-bar :value="embeddingProgress" variant="success"></b-progress-bar>
                     </b-progress>
 
@@ -72,7 +72,7 @@
                         variant="outline-danger"
                         size="sm"
                         aria-describedby="cancel-label"
-                        @click="show = false"
+                        @click="cancelProcess"
                     >
                         Cancel
                     </b-button>
@@ -110,6 +110,7 @@ export default {
             working: false,
 
             embeddingProgress: 0,
+            intervalID: null,
 
             embedderSelection: [],
             tabCounter: 0,
@@ -135,7 +136,7 @@ export default {
             this.working = true;
 
             this.$nextTick(function () {
-                window.setInterval(() => {
+                this.intervalID = window.setInterval(() => {
                     axios.get(`/api/progress/${this.task.embeddingJob}`).then(resp => {
                         this.embeddingProgress = resp.data.progress
                     })
@@ -204,7 +205,6 @@ export default {
         },
 
         makeFile(){
-            console.log('File', this.model.file)
             let data = new FormData()
             data.append('name', this.model.name)
             data.append('file', this.model.file)
@@ -213,6 +213,12 @@ export default {
         
         getProgress() {
             axios.get('/api/progress')
+        },
+
+        cancelProcess() {
+            clearInterval(this.intervalID)
+            this.intervalID = null;
+            this.working = false;
         }
     }
 }
