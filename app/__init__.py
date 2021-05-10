@@ -46,15 +46,10 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.objects(pk=user_id).first()
 
-# @app.before_request
-# def test():
-#     print(request.cookies)
-
-# @app.after_request
-# def add_header(response):
-#     # response.headers['Cache-Control'] = 'no-cache, no-store'
-#     print(response.headers.__dict__)
-#     return response
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store'
+    return response
 
 
 load_project()
