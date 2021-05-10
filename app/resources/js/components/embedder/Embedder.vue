@@ -140,6 +140,7 @@ export default {
                     axios.get(`/api/progress/${this.task.embeddingJob}`).then(resp => {
                         this.embeddingProgress = resp.data.progress
                     })
+                    if (this.embeddingProgress === this.total) this.cancelProcess();
                 }, 5000);
             })
             
