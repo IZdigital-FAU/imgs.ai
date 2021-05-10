@@ -1,9 +1,5 @@
 <template>
     <b-container>
-        <b-button variant="outline-success">
-            <b-icon icon="plus-square"></b-icon> Create new
-        </b-button>
-
         <Table
             :items="projects"
             :fields="fields"

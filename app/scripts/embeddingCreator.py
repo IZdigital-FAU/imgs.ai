@@ -106,6 +106,7 @@ class EmbeddingCreator:
             dims = emb_store[name].shape[1] 
 
             for metric in env.ANNOY_DISTANCE_METRICS:
+                print('dim, metric', dims, metric)
                 ann = AnnoyIndex(dims, metric)
 
                 for i in range(self.n_imgs):
@@ -132,13 +133,15 @@ class EmbeddingCreator:
             return sample([{'id': i, 'url': make_img_url(self.project.id, img.name)} for i, img in enumerate(self.project.data)], k)
 
         # Load neighborhood file
-        print('HOOD file:', embedder)
-        
         hood_file = join(self.vectorsPath, f'{embedder}_{metric}.ann')
+
+        print('HOOD file:', hood_file)
 
         embedder_name, reducer_name = embedder.split('_')
         print('EMBEDDERS', self.embedders)
         dim = self.embedders[embedder_name].reducer.n_components if self.embedders[embedder_name].hasReducer() else self.embedders[embedder_name].feature_length
+
+        print('dim, metric:', dim, metric)
 
         ann = AnnoyIndex(dim, metric)
         ann.load(hood_file)

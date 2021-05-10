@@ -123,6 +123,7 @@ export default {
 
         async makePositive(){
             this.selected_imgs.forEach(img => {
+                img.className = 'active'
                 this.positiveImages.push({id: img.id, url: img.url})
             })
 
@@ -193,5 +194,5 @@ export default {
     width: 200px;
 }
 
-.grid-item-img.active {box-shadow: 0px 0px 10px 0px red;}
+.active {border-color: #007bff;}
 </style>

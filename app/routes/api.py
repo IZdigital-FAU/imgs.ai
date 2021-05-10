@@ -108,8 +108,7 @@ def fetch_embedders(pid):
         embedders = request.get_json()
         print('DATA', embedders)
 
-        project.embedders = [Embedder(**embedder) for embedder in embedders]
-        project.embedders.save()
+        project.update(push_all__embedders=[Embedder(**embedder) for embedder in embedders])
 
         embedding_creator = EmbeddingCreator(projectId=project.id)
 

@@ -59,10 +59,10 @@
                 <div class="text-center">
                     <b-spinner
                         variant="success"
-                        class="mb-3"
+                        class="mb-3 mt-3"
                     ></b-spinner>
 
-                    <b-progress :max="total" show-progress striped animated class="mb-2 w-75 mx-auto">
+                    <b-progress :max="total" show-progress striped animated class="mb-2 mt-2 w-75 mx-auto">
                         <b-progress-bar :value="embeddingProgress" variant="success"></b-progress-bar>
                     </b-progress>
 
