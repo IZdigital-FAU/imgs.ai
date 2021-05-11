@@ -37,4 +37,4 @@ RUN cd ~ && \
 RUN pip3 install --upgrade pip
 RUN pip3 install -r reqs.txt --default-timeout=100
 
-CMD ./start.sh
+CMD gunicorn --timeout 600 -b 0.0.0.0:5002 --access-logfile logs/access_`date +"%Y-%m-%d"`.log app:app --reload
