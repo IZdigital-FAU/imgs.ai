@@ -38,7 +38,7 @@ login_manager = LoginManager()  # Login
 login_manager.login_view = 'auth.login'
 login_manager.login_message_category = "warning"
 
-login_manager.session_protection = None # https://flask-login.readthedocs.io/en/latest/#session-protection
+login_manager.session_protection = 'basic' # https://flask-login.readthedocs.io/en/latest/#session-protection
 
 login_manager.init_app(app)
 

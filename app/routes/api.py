@@ -5,6 +5,9 @@ from os.path import join
 from os import listdir
 import os
 
+import hashlib
+import re
+
 import json
 import csv
 
@@ -25,6 +28,9 @@ from rq import get_current_job
 from ..scripts.reducer import Reducer
 
 from ..scripts.querySelection import QuerySelection
+
+
+whitespace = re.compile('\s')
 
 
 api = Blueprint('api', __name__)
@@ -108,7 +114,12 @@ def fetch_embedders(pid):
         embedders = request.get_json()
         print('DATA', embedders)
 
-        project.update(push_all__embedders=[Embedder(**embedder) for embedder in embedders])
+        for embedder in embedders:
+            hash = hashlib.blake2s(whitespace.sub('', json.dumps(embedder)).encode()).hexdigest()
+            
+            if hash not in list(map(lambda emb: emb.hash, project.embedders)):
+                embedder['hash'] = hash
+                project.update(push__embedders=Embedder(**embedder))
 
         embedding_creator = EmbeddingCreator(projectId=project.id)
 
