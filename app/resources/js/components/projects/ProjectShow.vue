@@ -15,6 +15,10 @@
                     @onRowSelected="onRowSelected"
                     :tbody-transition-props="transProps">
 
+                    <template #cell(features)="row">
+                        <b-badge v-for="label in row.item.features" class="mr-1">{{label}}</b-badge>
+                    </template>
+
                     <template #cell(actions)="row">
                         <b-button variant="outline-info" size="sm" @click="row.toggleDetails" class="mr-2">
                             <b-icon :icon="row.detailsShowing ? 'chevron-up' : 'search'"></b-icon>
@@ -59,6 +63,7 @@ export default {
 
             fields: [
                 {key: 'name', sortable: true},
+                {key: 'features', sortable: true},
                 {key: 'actions', label: 'actions'}
             ],
 
@@ -104,7 +109,7 @@ export default {
         },
 
         getPage(event, page) {
-            axios.get(`/api/project/${this.model.id}`, { params: { page: page } }).then(resp => {
+            axios.get(`/api/${this.model.id}`, { params: { page: page } }).then(resp => {
                 let data = resp.data.data
 
                 this.imgs = data;
@@ -122,6 +127,7 @@ export default {
     }
 }
 </script>
+
 
 <style scoped>
 table .flip-list-move {

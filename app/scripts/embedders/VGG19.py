@@ -31,4 +31,4 @@ class VGG19(Embedder):
 
         with t.no_grad():
             output = self.model(self.transforms(img).unsqueeze(0).to(device))
-            return from_device(output).astype(np.float32).flatten()
+            return True, from_device(output).astype(np.float32).flatten()

@@ -27,7 +27,7 @@ export default {
     }),
 
     created() {
-        axios.get('api/projects').then(response => {
+        axios.get('api/').then(response => {
             this.projects = response.data
             this.loading = false;
         })

@@ -1,3 +1,4 @@
+from app.controllers.api.ImagesController import ImagesController
 from flask import Blueprint, request, session, send_from_directory, redirect, url_for
 from flask_login import fresh_login_required, current_user
 
@@ -30,7 +31,7 @@ from ..scripts.reducer import Reducer
 from ..scripts.querySelection import QuerySelection
 
 
-whitespace = re.compile('\s')
+from ..controllers.api.EmbedderController import EmbedderController
 
 
 api = Blueprint('api', __name__)
@@ -45,7 +46,7 @@ def get_metadata():
             'distance_metrics': env.ANNOY_DISTANCE_METRICS
         }
 
-@api.route("/<pid>/<img>")
+@api.route('/<pid>/<img>')
 @fresh_login_required
 def fetch_img(pid, img):
     project = Project.objects(pk=pid).first()
@@ -57,17 +58,13 @@ def fetch_img(pid, img):
 @api.route('/images', methods=["GET", "POST"])
 @fresh_login_required
 def fetch_imgs():
-    query = QuerySelection()
+    controller = ImagesController(request)
+    payload = controller.index()
 
-    if request.method == 'POST': query.set(**request.get_json())
-    
-    project = Project.objects().filter(name=query.project).first()
+    if request.method == 'POST':
+        payload = controller.store()
 
-    embedding_creator = EmbeddingCreator(project.id)
-    images = embedding_creator.compute_nns(**{k:v for k,v in query.get().items() if k != 'project'})
-
-    return {'data': images, 'querySelection': query.get(),
-                            'embedders': query.get_project_embedders()}
+    return payload
 
 
 @api.route('/embedders', methods=['GET'])
@@ -80,6 +77,7 @@ def generic_embedders():
         'embedders': [embedder.make_payload() for embedder in embedders],
         'reducers': [reducer.make_payload() for reducer in reducers]
     }
+
 
 @api.route('/progress/<pid>')
 def get_progress(pid):
@@ -103,54 +101,24 @@ def get_progress(pid):
 @api.route('/<pid>/embedders', methods=["GET", "POST"])
 @fresh_login_required
 def fetch_embedders(pid):
-    project = Project.objects(pk=pid).first()
+    controller = EmbedderController(request)
 
-    reducers = [Reducer(name) for name in ['PCA', 'TSNE']]
-    payload = {
-        'reducers': [reducer.make_payload() for reducer in reducers]
-    }
+    payload = controller.show(pid)
 
-    if request.method == 'POST':
-        embedders = request.get_json()
-        print('DATA', embedders)
-
-        for embedder in embedders:
-            hash = hashlib.blake2s(whitespace.sub('', json.dumps(embedder)).encode()).hexdigest()
-            
-            if hash not in list(map(lambda emb: emb.hash, project.embedders)):
-                embedder['hash'] = hash
-                project.update(push__embedders=Embedder(**embedder))
-
-        embedding_creator = EmbeddingCreator(projectId=project.id)
-
-        embedding_job = q.enqueue_call(embedding_creator.extract_vectors, args=(), timeout=2000, result_ttl=5000)
-        indexing_job = q.enqueue_call(embedding_creator.build_annoy, kwargs={'n_trees': 10}, timeout=2000, result_ttl=5000)
-
-        emb_task = Task(user=current_user.id)
-        emb_task.setup(embedding_job)
-        emb_task.save()
-
-        idx_task = Task(user=current_user.id)
-        idx_task.setup(indexing_job)
-        idx_task.save()
-
-        payload['task'] = {'embeddingJob': embedding_job.id, 'indexingJob': indexing_job.id}
-
-    embedders = [EmbedderFactory.create(embedder.name) for embedder in project.embedders]
-    payload['embedders'] = [embedder.make_payload() for embedder in embedders]
+    if request.method == 'POST': payload = controller.store(pid, current_user)
 
     return payload
 
 
-
-@api.route('/projects', methods=["GET", "POST"])
+@api.route('/', methods=["GET", "POST"])
 @fresh_login_required
 def handle_projects():
     projects = [
                     {
                         'id': str(project.id),
                         'name': project.name,
-                        'nimgs': project.data.count()
+                        'nimgs': project.data.count(),
+                        'features': list(map(lambda x: x.name, project.embedders))
                     }
                 
                 for project in Project.objects().all()]
@@ -158,11 +126,9 @@ def handle_projects():
     return json.dumps(projects)
 
 
-@api.route('/project/<pid>', methods=["GET", "POST"])
+@api.route('/<pid>', methods=["GET", "POST"])
 @fresh_login_required
 def get_project_data(pid):
-    print('PROJECT', pid)
-
     project = Project.objects(pk=pid).first()
 
     total = project.data.count()

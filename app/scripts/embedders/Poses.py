@@ -82,7 +82,4 @@ class Poses(Embedder):
 
                 weighted_average = t.mean(normalized_keypoints, axis=0)
 
-            # scores = from_device(output[0]["scores"])
-            # keypoints = from_device(output[0]["keypoints"])
-            # normalized_keypoints = self._normalize_keypoints(keypoints, scores)
-            return weighted_average # normalized_keypoints.astype(np.float32).flatten()
+            return keypoints.numel(), weighted_average

@@ -33,17 +33,15 @@ from ..scripts.NearestNeighborOperator import NearestNeighborOperator
 
 class EmbeddingCreator:
 
-    def __init__(self, projectId, num_workers=64):
+    def __init__(self, projectId, embedder_hashes=[], num_workers=64):
         self.num_workers = num_workers
 
         self.project = Project.objects(pk=projectId).first()
         self.vectorsPath = join(env.VECTORS_DIR, self.project.name)
 
-        new_dir(self.vectorsPath)
-
         self.n_imgs = self.project.data.count()
 
-        self.embedders = instantiate_embedders(self.project)
+        self.embedders = instantiate_embedders(self.project, embedder_hashes)
         self.embedding_store_fpath = join(self.vectorsPath, 'embedding_store.hdf5')
 
         self.prepare_embedding_store()
@@ -76,12 +74,20 @@ class EmbeddingCreator:
 
         job = get_current_job()
 
-        for i, img_fname in list_imgs(PATH, enum=1):
-            img = PIL.Image.open(join(PATH, img_fname)).convert("RGB")
+        for i, img_obj in enumerate(self.project.data):  # list_imgs(PATH, enum=1)
+            img = PIL.Image.open(join(PATH, img_obj.name)).convert("RGB")
 
             for name, embedder in self.embedders.items():
-                vector = embedder.transform(img)
+                found, vector = embedder.transform(img)
                 emb_store[name][i] = vector
+
+                if found:
+                    if not self.project.data[i].features:
+                        self.project.data[i].features = [name]
+                    else:
+                        self.project.data[i].features.append(name)
+                    
+                    self.project.update(**{f'set__data__{i}': self.project.data[i]})
 
             job.meta['progress'] = i + 1
             job.save_meta()
@@ -161,20 +167,25 @@ class EmbeddingCreator:
 
 
     def getDims(self, embedder):
-        return min(embedder.reducer.n_components, embedder.feature_length, self.n_imgs) if embedder.reducer else embedder.feature_length
+        return min(embedder.reducer.n_components, embedder.feature_length, self.n_imgs)
 
 
-def instantiate_embedders(project):
+def instantiate_embedders(project, embedder_hashes):
     embedders = {}
 
-    for embedder in project.embedders:
+    new_embedders = project.embedders
+
+    if embedder_hashes:
+        new_embedders = filter(lambda x: x.hash in embedder_hashes, project.embedders)
+
+    for embedder in new_embedders:
         name = embedder['name']
         params = embedder['params']
 
         embedders[name] = EmbedderFactory.create(name, params)
 
         if embedder.hasReducer():
-            embedder.reducer.params['n_components'] = min(embedder.reducer.params['n_components'], project.data.count())
+            embedder.reducer.params['n_components'] = min(embedder.reducer.params['n_components'], project.data.count(), embedders[name].feature_length)
             embedders[name].reducer = ReducerFactory.create(embedder.reducer.name, embedder.reducer.params)
 
     return embedders

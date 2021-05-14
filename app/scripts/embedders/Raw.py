@@ -19,4 +19,4 @@ class Raw(Embedder):
     def transform(self, img, device="cpu"):
         img = img.resize((self.params['resolution'].value, self.params['resolution'].value), PIL.Image.ANTIALIAS)
         output = np.array(img).flatten()
-        return output.astype(np.uint8).flatten()
+        return True, output.astype(np.uint8).flatten()

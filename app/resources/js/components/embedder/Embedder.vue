@@ -63,7 +63,7 @@
                     ></b-spinner>
 
                     <b-progress :max="total" show-progress striped animated class="mb-2 mt-2 w-75 mx-auto">
-                        <b-progress-bar :value="embeddingProgress" variant="success"></b-progress-bar>
+                        <b-progress-bar :value="progress" variant="success"></b-progress-bar>
                     </b-progress>
 
                     <p id="cancel-label">Running feature extraction...</p>
@@ -72,7 +72,7 @@
                         variant="outline-danger"
                         size="sm"
                         aria-describedby="cancel-label"
-                        @click="cancelProcess"
+                        @click="cancelProcess(false)"
                     >
                         Cancel
                     </b-button>
@@ -109,7 +109,7 @@ export default {
             task: {},
             working: false,
 
-            embeddingProgress: 0,
+            progress: 0,
             intervalID: null,
 
             embedderSelection: [],
@@ -128,19 +128,33 @@ export default {
     methods: {
         post() {   
             let data = this.dispatch();
+
             axios.post(`api/${this.id}/embedders`, data, {headers: {"X-CSRFToken": this.csrf}})
                 .then(resp => {
                     this.task = resp.data.task;
+                    console.log('TASK', this.task)
+
+                    if (!this.task) {
+                        this.cancelProcess();
+                        this.$bvToast.toast('Embedder config exists', {
+                            title: '❗ Warning',
+                            autoHideDelay: 3000,
+                            variant: 'danger',
+                            solid: true,
+                            appendToast: true
+                        })
+                    }
+
                 })
 
             this.working = true;
 
-            this.$nextTick(function () {
+            this.$nextTick( function () {
                 this.intervalID = window.setInterval(() => {
                     axios.get(`/api/progress/${this.task.embeddingJob}`).then(resp => {
-                        this.embeddingProgress = resp.data.progress
+                        this.progress = resp.data.progress
                     })
-                    if (this.embeddingProgress === this.total) this.cancelProcess();
+                    if (this.progress === this.total) this.cancelProcess(true);
                 }, 5000);
             })
             
@@ -216,10 +230,20 @@ export default {
             axios.get('/api/progress')
         },
 
-        cancelProcess() {
+        cancelProcess(success) {
             clearInterval(this.intervalID)
             this.intervalID = null;
             this.working = false;
+
+            if (success){
+                this.$bvToast.toast('Feature extraction complete', {
+                    title: '✅ Success',
+                    autoHideDelay: 3000,
+                    variant: 'success',
+                    solid: true,
+                    appendToast: true
+                })
+            }
         }
     }
 }

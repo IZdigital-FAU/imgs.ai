@@ -13,8 +13,8 @@
                 <b-badge variant="primary" pill>{{project.item.nimgs}}</b-badge>
             </template>
 
-            <template #cell(nimgs)="project">
-                <b-badge variant="primary" pill>{{project.item.nimgs}}</b-badge>
+            <template #cell(features)="project">
+                <b-badge v-for="feat in project.item.features" class="mr-1">{{feat}}</b-badge>
             </template>
 
             <template #table-caption>Manage your projects</template>
@@ -46,6 +46,10 @@ export default {
                     sortable: true
                 },
                 {
+                    key: 'features',
+                    sortable: true
+                },
+                {
                     key: 'category',
                     sortable: true
                 }
@@ -56,7 +60,7 @@ export default {
     },
 
     created() {
-        axios.get('api/projects').then(response => {
+        axios.get('api/').then(response => {
             this.projects = response.data
             this.loading = false;
         })
