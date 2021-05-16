@@ -16,7 +16,7 @@
                     :tbody-transition-props="transProps">
 
                     <template #cell(features)="row">
-                        <b-badge v-for="label in row.item.features" class="mr-1">{{label}}</b-badge>
+                        <b-badge v-for="feat in row.item.features" class="mr-1" :key="feat">{{feat}}</b-badge>
                     </template>
 
                     <template #cell(actions)="row">

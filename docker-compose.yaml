@@ -51,12 +51,3 @@ volumes:
         driver: local
     redis_data:
         driver: local
-
-# https://www.digitalocean.com/community/tutorials/how-to-set-up-flask-with-mongodb-and-docker
-# NEED REVERSE PROXY NGINX!
-
-# https://boxboat.com/2017/01/23/volumes-and-dockerfiles-dont-mix/
-
-# https://dev.to/ishankhare07/nginx-as-reverse-proxy-for-a-flask-app-using-docker-3ajg
-
-# https://www.distributedpython.com/2018/11/15/celery-docker/

@@ -1,5 +1,5 @@
 <template>
-    <b-modal id="carouselmodal" title="imgs.ai" hide-footer>
+    <b-modal id="carouselmodal" :title="getName()" hide-footer>
          <b-carousel
             id="imgs"
             v-model="slide"
@@ -14,8 +14,8 @@
             @sliding-end="onSlideEnd"
             >
             <b-carousel-slide
-                v-for="img in imgs" v-bind:key="img.id"
-                text="Nulla vitae elit libero, a pharetra augue mollis interdum."
+                v-for="img in imgs" :key="img.id"
+                :text="img.id"
                 :img-src="img.url"
             ></b-carousel-slide>
         </b-carousel>
@@ -45,6 +45,12 @@ export default {
       },
       onSlideEnd(slide) {
         this.sliding = false
+      },
+      
+      getName() {
+          let img = this.imgs[this.slide]
+          let components = img.url.split('/');
+          return `${components[components.length-1]} (#${img.id})`;
       }
     }
 }

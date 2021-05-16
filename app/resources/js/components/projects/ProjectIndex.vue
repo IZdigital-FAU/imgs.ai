@@ -14,7 +14,7 @@
             </template>
 
             <template #cell(features)="project">
-                <b-badge v-for="feat in project.item.features" class="mr-1">{{feat}}</b-badge>
+                <b-badge v-for="feat in project.item.features" class="mr-1" :key="feat">{{feat}}</b-badge>
             </template>
 
             <template #table-caption>Manage your projects</template>

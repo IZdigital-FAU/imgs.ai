@@ -5,14 +5,14 @@
                 <b-col>
                     <b-row>
                         <b-col>
-                            <b-img class="grid-item-img pos"
-                                v-for="img in positiveImages" v-bind:key="img.id"
+                            <b-img class="query-img"
+                                v-for="img in positiveImages" :key="img.id"
                                 :src="img.url" :ref="img.id"
                                 @click="select(img)"></b-img>
                         </b-col>
                         <b-col>
-                            <b-img class="grid-item-img neg"
-                                v-for="img in negativeImages" v-bind:key="img.id"
+                            <b-img class="query-img"
+                                v-for="img in negativeImages" :key="img.id"
                                 :src="img.url" :ref="img.id"
                                 @click="select(img)"></b-img>
                         </b-col>
@@ -29,11 +29,6 @@
             </b-row>
             
             <CarouselModal :slide="slide"></CarouselModal>
-
-            <b-button-group v-if="this.selected_imgs.length > 0">
-                <b-button variant="success" @click="makePositive()">Positive</b-button>
-                <b-button variant="danger" @click="makeNegative()">Negative</b-button>
-            </b-button-group>
 
         </b-card>
 
@@ -56,6 +51,13 @@
                     </stack-item>
                 </stack>
             </b-container>
+
+            <b-button-toolbar class="toolbar">
+                <b-button-group v-if="this.selected_imgs.length > 0">
+                    <b-button variant="success" @click="makePositive()"><b-icon icon="plus-circle"></b-icon> Positive</b-button>
+                    <b-button variant="danger" @click="makeNegative()"><b-icon icon="dash-circle"></b-icon> Negative</b-button>
+                </b-button-group>
+            </b-button-toolbar>
         </b-overlay>
     </div>
 </template>
@@ -113,17 +115,19 @@ export default {
                 this.selected_imgs.push(img)
                 var imgElem = this.$refs[img.id][0]
                 imgElem.classList.add('active')
+                console.log('SELECTED', imgElem)
 
             } else {
                 this.selected_imgs.splice(this.selected_imgs.indexOf(img))
                 var imgElem = this.$refs[img.id][0]
                 imgElem.classList.remove('active')
+                console.log('UNSELECT', imgElem)
             }
+            
         },
 
         async makePositive(){
             this.selected_imgs.forEach(img => {
-                img.className = 'active'
                 this.positiveImages.push({id: img.id, url: img.url})
             })
 
@@ -182,17 +186,18 @@ export default {
 </script>
 
 <style scoped>
-.grid-item-img.pos {
-  width: 30%;
+.query-img {
+    width: 20%;
 }
 
-.grid-item-img.neg {
-  width: 30%;
+.active {
+    border-style: solid;
+    border-color: #007bff;
 }
 
-.grid-item-img {
-    width: 200px;
+.toolbar {
+    position: fixed;
+    top: 94vh;
+    left: 50vw;
 }
-
-.active {border-color: #007bff;}
 </style>

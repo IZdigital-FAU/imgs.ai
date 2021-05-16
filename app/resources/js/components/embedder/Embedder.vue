@@ -33,7 +33,7 @@
                             <b-tabs pills card vertical>
                                 <b-tab v-for="reducer in reducers" :key="reducer.name" :title="reducer.name" :active="emb.reducer.name === reducer.name">
                                     <b-card-text>
-                                        <b-input-group :prepend="param" v-for="(value, param) in reducer.params" v-bind:key="param.name">
+                                        <b-input-group :prepend="param" v-for="(value, param) in reducer.params" :key="param.name">
                                             <b-form-input :id="param" :type="reducer.params[param].input_type"
                                                         :min="reducer.params[param].meta.minVal" :max="reducer.params[param].meta.maxVal" :step="reducer.params[param].meta.step"
                                                         v-model="emb.reducer.params[param].value"></b-form-input>
