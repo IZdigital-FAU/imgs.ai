@@ -21,14 +21,14 @@ class EmbedderController(Controller):
     def __init__(self, request): super().__init__(request)
 
     def show(self, pid):
-        project = Project.objects(pk=pid).first()
+        project = Project.objects(pk=pid).as_pymongo()[0]
 
         reducers = [Reducer(name) for name in ['PCA', 'TSNE']]
         payload = {
             'reducers': [reducer.make_payload() for reducer in reducers]
         }
 
-        embedders = [EmbedderFactory.create(embedder.name) for embedder in project.embedders]
+        embedders = [EmbedderFactory.create(embedder.name) for embedder in project['embedders']]
         payload['embedders'] = [embedder.make_payload() for embedder in embedders]
 
         return payload

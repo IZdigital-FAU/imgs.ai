@@ -6,6 +6,8 @@ from os.path import join
 from os import listdir
 import os
 
+from pymongo import MongoClient
+
 import hashlib
 import re
 
@@ -49,8 +51,8 @@ def get_metadata():
 @api.route('/<pid>/<img>')
 @fresh_login_required
 def fetch_img(pid, img):
-    project = Project.objects(pk=pid).first()
-    PATH = join(env.PROJECT_DATA_DIR, project.name)
+    project = Project.objects(pk=pid).as_pymongo()[0]
+    PATH = join(env.PROJECT_DATA_DIR, project['name'])
 
     return send_from_directory(PATH, img)
 
@@ -115,13 +117,12 @@ def fetch_embedders(pid):
 def handle_projects():
     projects = [
                     {
-                        'id': str(project.id),
-                        'name': project.name,
-                        'nimgs': project.data.count(),
-                        'features': list(map(lambda x: x.name, project.embedders))
+                        'id': str(project['_id']),
+                        'name': project['name'],
+                        'nimgs': len(project['data']) if 'data' in project else 0,
+                        'features': list(map(lambda x: x['name'], project['embedders']))
                     }
-                
-                for project in Project.objects().all()]
+                for project in Project.objects.as_pymongo()]
 
     return json.dumps(projects)
 
@@ -129,15 +130,15 @@ def handle_projects():
 @api.route('/<pid>', methods=["GET", "POST"])
 @fresh_login_required
 def get_project_data(pid):
-    project = Project.objects(pk=pid).first()
+    project = Project.objects(pk=pid).as_pymongo()[0]
 
-    total = project.data.count()
+    total = len(project['data']) if 'data' in project else 0
 
     per_page = 10
     start = (int(request.args.get('page')) - 1) * per_page
     end = min(start + per_page, total)
 
-    return {'data': [json.loads(img.to_json()) for img in project.data[start:end]], 'name': project.name, 'total': total, 'per_page': per_page}
+    return {'data': [img for img in project['data'][start:end]], 'name': project['name'], 'total': total, 'per_page': per_page}
 
 
 
