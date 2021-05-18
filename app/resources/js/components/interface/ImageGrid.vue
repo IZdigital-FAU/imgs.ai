@@ -35,7 +35,7 @@
         <b-overlay :show="loading" spinner-variant="danger">
             <b-container fluid class="mt-2">
                 <stack
-                    :column-min-width="300"
+                    :column-min-width="200"
                     :gutter-width="15"
                     :gutter-height="15"
                     monitor-images-loaded>
@@ -187,7 +187,7 @@ export default {
 
 <style scoped>
 .query-img {
-    width: 20%;
+    width: 45%;
 }
 
 .active {
