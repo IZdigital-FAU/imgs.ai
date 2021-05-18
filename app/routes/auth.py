@@ -16,7 +16,6 @@ def signup():
 
     if request.method == 'POST':
         form = request.form
-        print(form)
         existing_user = User.objects(email=form['email']).first()
         
         if not existing_user:
@@ -55,5 +54,4 @@ def login():
 def logout():
     logout_user()
     session.clear()
-    print(session)
     return redirect(url_for("auth.login"))

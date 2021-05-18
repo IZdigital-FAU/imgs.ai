@@ -48,7 +48,6 @@ class Poses(Embedder):
 
 
     def build(self, device='cpu'):
-        print('init model')
         self.device = device
         self.model = tv.models.detection.keypointrcnn_resnet50_fpn(pretrained=True).to(device)
         self.model.eval()

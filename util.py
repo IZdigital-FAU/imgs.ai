@@ -125,5 +125,4 @@ def list_imgs(path, enum=False):
 
 def get_embedder_names():
     embedders = [emb[:-3] for emb in listdir(abspath('app/scripts/embedders')) if emb.endswith('.py')]
-    print('embedder names', embedders)
     return embedders

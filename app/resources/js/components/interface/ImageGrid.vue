@@ -115,13 +115,10 @@ export default {
                 this.selected_imgs.push(img)
                 var imgElem = this.$refs[img.id][0]
                 imgElem.classList.add('active')
-                console.log('SELECTED', imgElem)
-
             } else {
                 this.selected_imgs.splice(this.selected_imgs.indexOf(img))
                 var imgElem = this.$refs[img.id][0]
                 imgElem.classList.remove('active')
-                console.log('UNSELECT', imgElem)
             }
             
         },

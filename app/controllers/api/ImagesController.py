@@ -12,9 +12,9 @@ class ImagesController(Controller):
         self.query = QuerySelection()
 
     def index(self):
-        project = Project.objects().filter(name=self.query.project).first()
+        project = Project.objects().filter(name=self.query.project).as_pymongo()[0]
 
-        embedding_creator = EmbeddingCreator(project.id)
+        embedding_creator = EmbeddingCreator(project['_id'])
         images = embedding_creator.compute_nns(**{k:v for k,v in self.query.get().items() if k != 'project'})
 
         return {'data': images, 'querySelection': self.query.get(), 'embedders': self.query.get_project_embedders()}

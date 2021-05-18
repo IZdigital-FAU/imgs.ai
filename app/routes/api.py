@@ -43,7 +43,7 @@ api = Blueprint('api', __name__)
 @fresh_login_required
 def get_metadata():
     return {
-            'projects': [project.name for project in Project.objects()],
+            'projects': [project['name'] for project in Project.objects().as_pymongo()],
             'orderings': env.MODES,
             'distance_metrics': env.ANNOY_DISTANCE_METRICS
         }

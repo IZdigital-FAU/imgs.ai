@@ -132,7 +132,6 @@ export default {
             axios.post(`api/${this.id}/embedders`, data, {headers: {"X-CSRFToken": this.csrf}})
                 .then(resp => {
                     this.task = resp.data.task;
-                    console.log('TASK', this.task)
 
                     if (!this.task) {
                         this.cancelProcess();

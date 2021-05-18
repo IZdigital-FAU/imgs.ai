@@ -21,7 +21,6 @@ app = Flask(__name__)
 # app.session_interface = CustomSessionInterface()
 
 env.load_ini()
-print(env.__dict__)
 app.config.from_object(env)
 
 db.init_app(app)
@@ -52,4 +51,4 @@ def add_header(response):
     return response
 
 
-load_project()
+# load_project()
