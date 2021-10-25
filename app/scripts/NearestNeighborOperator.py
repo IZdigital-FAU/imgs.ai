@@ -50,10 +50,7 @@ class NearestNeighborOperator:
 
     # Get vectors from indices
     def vectors_from_idxs(self, idxs):
-        vectors = []
-        for idx in idxs:
-            vectors.append(self.ann.get_item_vector(idx))  # Indices are strings
-
+        vectors = list(map(lambda idx: self.ann.get_item_vector(idx), idxs))
         return vectors
 
 

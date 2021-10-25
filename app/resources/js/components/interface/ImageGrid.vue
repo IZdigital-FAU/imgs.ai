@@ -1,30 +1,22 @@
 <template>
     <div>
-        <b-card class="mt-3" header="Visual query">
+        <b-card class="mt-3 ml-3 mr-3">
             <b-row>
                 <b-col>
-                    <b-row>
-                        <b-col>
-                            <b-img class="query-img"
-                                v-for="img in positiveImages" :key="img.id"
-                                :src="img.url" :ref="img.id"
-                                @click="select(img)"></b-img>
-                        </b-col>
-                        <b-col>
-                            <b-img class="query-img"
-                                v-for="img in negativeImages" :key="img.id"
-                                :src="img.url" :ref="img.id"
-                                @click="select(img)"></b-img>
-                        </b-col>
-                    </b-row>
+                    <b-img class="query-img"
+                        v-for="img in positiveImages" :key="img.id"
+                        :src="img.url" :ref="img.id"
+                        @click="selectQuery(img)">
 
-                    <b-button-group>
-                        <b-button variant="outline-danger" @click="remove()">Remove</b-button>
-                        <b-button variant="outline-info" @click="clear()">Clear</b-button>
-                    </b-button-group>
+                        <b-btn-group><b-btn class="imgSettings">Button 1</b-btn></b-btn-group>
+
+                    </b-img>
                 </b-col>
                 <b-col>
-                    <SearchPanel @update="update"></SearchPanel>
+                    <b-img class="query-img"
+                        v-for="img in negativeImages" :key="img.id"
+                        :src="img.url" :ref="img.id"
+                        @click="selectQuery(img)"></b-img>
                 </b-col>
             </b-row>
             
@@ -32,7 +24,7 @@
 
         </b-card>
 
-        <b-overlay :show="loading" spinner-variant="danger">
+        <b-overlay :show="loading" spinner-type="grow">
             <b-container fluid class="mt-2">
                 <stack
                     :column-min-width="200"
@@ -52,12 +44,20 @@
                 </stack>
             </b-container>
 
-            <b-button-toolbar class="toolbar">
-                <b-button-group v-if="this.selected_imgs.length > 0">
-                    <b-button variant="success" @click="makePositive()"><b-icon icon="plus-circle"></b-icon> Positive</b-button>
-                    <b-button variant="danger" @click="makeNegative()"><b-icon icon="dash-circle"></b-icon> Negative</b-button>
-                </b-button-group>
-            </b-button-toolbar>
+            <Toolbar 
+                     :positiveImages="positiveImages"
+                     :negativeImages="negativeImages"
+                     :embedders="embedders"
+                     :selected_imgs="selected_imgs"
+                     :selected_query_imgs="selected_query_imgs"
+                     :query="querySelection"
+                     @makePositive="makePositive"
+                     @makeNegative="makeNegative"
+                     @clear="clear"
+                     @remove="remove"
+                     @update="update">
+            </Toolbar>
+
         </b-overlay>
     </div>
 </template>
@@ -67,16 +67,18 @@ import axios from 'axios'
 
 import SearchPanel from './SearchPanel.vue'
 import CarouselModal from './CarouselModal.vue'
+import Toolbar from './Toolbar.vue'
 
 import { Stack, StackItem } from 'vue-stack-grid';
 
 export default {
     name: 'ImageGrid',
-    components: {SearchPanel, CarouselModal, Stack, StackItem},
+    components: {SearchPanel, CarouselModal, Toolbar, Stack, StackItem},
 
     data : () => ({
         imgs: [],
         selected_imgs: [],
+        selected_query_imgs: [],
         
         positiveImages: [],
         negativeImages: [],
@@ -100,9 +102,9 @@ export default {
 
         this.loading = false;
 
-        this.$nextTick(function () {
-            window.dispatchEvent(new Event('resize'));
-        })
+        // this.$nextTick(function () {
+        //     window.dispatchEvent(new Event('resize'));
+        // })
     },
 
     activated() {
@@ -157,7 +159,7 @@ export default {
         },
 
         remove() {
-            this.selected_imgs.forEach(img => {
+            this.selected_query_imgs.forEach(img => {
                 let posIdx = this.positiveImages.map(pos => pos.id)
                 let negIdx = this.negativeImages.map(neg => neg.id)
 
@@ -165,6 +167,7 @@ export default {
                 else if (negIdx.includes(img.id)) this.negativeImages.splice(negIdx.indexOf(img.id), 1)
             })
             this.selected_imgs = [];
+            this.selected_query_imgs = [];
             this.update()
         },
 
@@ -177,6 +180,18 @@ export default {
         openModal(img) {
             this.slide = this.imgs.map(item => item.id).indexOf(img.id)
             this.$bvModal.show('carouselmodal')
+        },
+
+        selectQuery(img) {
+            if (!this.selected_query_imgs.includes(img)) {
+                this.selected_query_imgs.push(img)
+                var imgElem = this.$refs[img.id][0]
+                imgElem.classList.add('active')
+            } else {
+                this.selected_query_imgs.splice(this.selected_query_imgs.indexOf(img))
+                var imgElem = this.$refs[img.id][0]
+                imgElem.classList.remove('active')
+            }
         }
     }
 }
@@ -184,7 +199,7 @@ export default {
 
 <style scoped>
 .query-img {
-    width: 45%;
+    width: 15vw;
 }
 
 .active {
@@ -192,9 +207,8 @@ export default {
     border-color: #007bff;
 }
 
-.toolbar {
-    position: fixed;
-    top: 94vh;
-    left: 50vw;
+
+.imgSettings {
+    position: absolute;
 }
 </style>
